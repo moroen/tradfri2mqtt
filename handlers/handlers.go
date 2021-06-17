@@ -20,6 +20,11 @@ type MQTTboolPayload struct {
 	Value bool
 }
 
+type MQTTgwConfig struct {
+	Ip  string
+	Key string
+}
+
 func Subscribe(client mqtt.Client) {
 	if token := client.Subscribe("tradfri/+/38/+/dimmer/set", 0, Dimmer); token.Wait() && token.Error() != nil {
 		log.Print(token.Error())
@@ -28,6 +33,11 @@ func Subscribe(client mqtt.Client) {
 	if token := client.Subscribe("tradfri/+/37/+/switch/set", 0, State); token.Wait() && token.Error() != nil {
 		log.Print(token.Error())
 	}
+
+	if token := client.Subscribe("tradfri/cmd/#", 0, Command); token.Wait() && token.Error() != nil {
+		log.Print(token.Error())
+	}
+
 }
 
 func Dimmer(client mqtt.Client, msg mqtt.Message) {
