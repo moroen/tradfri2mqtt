@@ -10,7 +10,10 @@ import (
 	"github.com/moroen/tradfri2mqtt/handlers"
 	"github.com/moroen/tradfri2mqtt/messages"
 	"github.com/moroen/tradfri2mqtt/settings"
+	"github.com/moroen/tradfri2mqtt/tradfri"
 )
+
+var status_channel chan (error)
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	fmt.Printf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
@@ -30,11 +33,9 @@ func main() {
 	log.SetLevel(log.DebugLevel)
 	coap.SetCoapRetry(2, 1)
 
-	c := make(chan error)
+	status_channel = make(chan error)
 
-	conf := settings.GetConfig()
-	coapConfig := settings.GetCoapConfig()
-	coap.SetConfig(coapConfig)
+	conf := settings.GetConfig(false)
 
 	var broker = conf.Mqtt.Host
 	var port = 1883
@@ -52,14 +53,15 @@ func main() {
 
 	messages.SetClientConnection(_client)
 	handlers.Subscribe(_client)
-	go coap.Observe(messages.Show, c)
+
+	tradfri.Start(false)
+
 	// time.Sleep(2 * time.Second)
 	//coap.ObserveRestart(true)
 	select {
-	case err := <-c:
+	case err := <-status_channel:
 		log.Error(err.Error())
 	}
-	<-c
 
 	_client.Disconnect(250)
 }

@@ -24,8 +24,8 @@ type Config struct {
 
 var _cfg Config
 
-func GetConfig() Config {
-	if _cfg != (Config{}) {
+func GetConfig(force_reload bool) Config {
+	if _cfg != (Config{}) && !force_reload {
 		return _cfg
 	}
 
@@ -63,8 +63,8 @@ func WriteConfig(cfg *Config) (err error) {
 	return err
 }
 
-func GetCoapConfig() coap.GatewayConfig {
-	cfg := GetConfig()
+func GetCoapConfig(force_reload bool) coap.GatewayConfig {
+	cfg := GetConfig(force_reload)
 
 	coapSettings := coap.GatewayConfig{
 		Gateway:  cfg.Tradfri.Gateway,

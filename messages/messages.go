@@ -26,6 +26,17 @@ func SetClientConnection(client mqtt.Client) {
 	_client = client
 }
 
+func SendTopic(topic string, payload []byte) error {
+	if _client != nil {
+		if topic != "" {
+			_client.Publish(topic, 0, false, payload)
+		}
+	} else {
+		log.Fatal("MQTT client connection not set")
+	}
+	return nil
+}
+
 func Show(msg []byte) error {
 	// fmt.Printf("%s\n", msg)
 
@@ -63,13 +74,5 @@ func Show(msg []byte) error {
 		log.Println(err.Error())
 	}
 
-	if _client != nil {
-
-		if topic != "" {
-			_client.Publish(topic, 0, false, valueJson)
-		}
-	} else {
-		log.Fatal("MQTT client connection not set")
-	}
-	return nil
+	return SendTopic(topic, valueJson)
 }

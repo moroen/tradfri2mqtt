@@ -2,14 +2,22 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	coap "github.com/moroen/go-tradfricoap"
+	"github.com/moroen/tradfri2mqtt/messages"
 	"github.com/moroen/tradfri2mqtt/settings"
+	"github.com/moroen/tradfri2mqtt/tradfri"
 )
+
+type MQTTstatus struct {
+	Status string
+	Error  string
+}
 
 func Command(client mqtt.Client, msg mqtt.Message) {
 	log.WithFields(log.Fields{
@@ -27,21 +35,35 @@ func Command(client mqtt.Client, msg mqtt.Message) {
 
 	switch s[2] {
 	case "gwconfig":
-		gwConfig(gwconf)
+		gwConfig(gwconf, client)
 	}
 
 }
 
-func gwConfig(gwconf MQTTgwConfig) error {
-	cfg := settings.GetConfig()
+func gwConfig(gwconf MQTTgwConfig, client mqtt.Client) error {
+	cfg := settings.GetConfig(false)
 
 	if psk, err := coap.GetNewPSK(gwconf.Ip, gwconf.Key); err == nil {
 		cfg.Tradfri.Gateway = gwconf.Ip
 		cfg.Tradfri.Identity = psk.Ident
 		cfg.Tradfri.Passkey = psk.Key
-		settings.WriteConfig(&cfg)
+		fmt.Println("Writing config")
+		err = settings.WriteConfig(&cfg)
+		if err != nil {
+			log.Error(err.Error())
+			if statusJson, err := json.Marshal(MQTTstatus{Status: "Error", Error: err.Error()}); err == nil {
+				return messages.SendTopic("tradfri/cmd/status/gwconfig", statusJson)
+			}
+		}
+
+		if statusJson, err := json.Marshal(MQTTstatus{Status: "Ok"}); err == nil {
+			log.Debug("gwConfig ok")
+			tradfri.ReStart()
+			return messages.SendTopic("tradfri/cmd/status/gwconfig", statusJson)
+		}
 		return nil
 	} else {
+		log.Fatal(err.Error())
 		return err
 	}
 }
