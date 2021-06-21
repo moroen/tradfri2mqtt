@@ -64,7 +64,7 @@ func Show(msg []byte) error {
 			return err
 		}
 	} else if info, err := coap.ParseBlindInfo(msg); err == nil {
-		topic = fmt.Sprintf("tradfri/%d/blind/currentValue", info.Id)
+		topic = fmt.Sprintf("tradfri/%d/38/0/blind", info.Id)
 		valueJson, err = json.Marshal(MQTTmessage{Value: int(info.Level)})
 		if err != nil {
 			log.Println(err.Error())

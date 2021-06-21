@@ -26,7 +26,19 @@ type MQTTgwConfig struct {
 }
 
 func Subscribe(client mqtt.Client) {
+	if token := client.Subscribe("tradfri/+/38/+/cw/set", 0, SetHex); token.Wait() && token.Error() != nil {
+		log.Print(token.Error())
+	}
+
+	if token := client.Subscribe("tradfri/+/38/+/cws/set", 0, SetHex); token.Wait() && token.Error() != nil {
+		log.Print(token.Error())
+	}
+
 	if token := client.Subscribe("tradfri/+/38/+/dimmer/set", 0, Dimmer); token.Wait() && token.Error() != nil {
+		log.Print(token.Error())
+	}
+
+	if token := client.Subscribe("tradfri/+/38/+/blind/set", 0, Blind); token.Wait() && token.Error() != nil {
 		log.Print(token.Error())
 	}
 
@@ -40,6 +52,71 @@ func Subscribe(client mqtt.Client) {
 
 }
 
+func ParseMessage(msg mqtt.Message) (deviceid int64, value int, err error) {
+	var payload MQTTpayload
+	err = json.Unmarshal(msg.Payload(), &payload)
+	if err != nil {
+		log.Fatalln(err.Error())
+		return 0, 0, err
+	}
+
+	s := strings.Split(msg.Topic(), "/")
+
+	deviceid, err = strconv.ParseInt(s[1], 10, 64)
+	if err != nil {
+		log.Fatalln(err.Error())
+		return 0, 0, err
+	}
+	return deviceid, payload.Value, nil
+}
+
+func SetHex(client mqtt.Client, msg mqtt.Message) {
+	log.WithFields(log.Fields{
+		"topic":   msg.Topic(),
+		"payload": string(msg.Payload()),
+	}).Debug("Received color message")
+
+	deviceid, value, err := ParseMessage(msg)
+	if err != nil {
+		log.Error(err.Error())
+		return
+	}
+
+	if _, err = coap.SetHexForLevel(deviceid, value); err != nil {
+		log.WithFields(log.Fields{
+			"error": err.Error(),
+		}).Error("Color message error")
+	}
+}
+
+func Blind(client mqtt.Client, msg mqtt.Message) {
+	log.WithFields(log.Fields{
+		"topic":   msg.Topic(),
+		"payload": string(msg.Payload()),
+	}).Debug("Received blind message")
+
+	deviceid, value, err := ParseMessage(msg)
+	if err != nil {
+		log.Error(err.Error())
+		return
+	}
+
+	switch value {
+	case 255:
+		_, err = coap.SetBlind(deviceid, 100)
+	case 0:
+		_, err = coap.SetBlind(deviceid, 0)
+	default:
+		_, err = coap.SetBlind(deviceid, value)
+	}
+
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err.Error(),
+		}).Error("Blind message error")
+	}
+}
+
 func Dimmer(client mqtt.Client, msg mqtt.Message) {
 	// fmt.Printf("Received dimmer message: %s from topic: %s\n", msg.Payload(), msg.Topic())
 
@@ -48,39 +125,25 @@ func Dimmer(client mqtt.Client, msg mqtt.Message) {
 		"payload": string(msg.Payload()),
 	}).Debug("Received dimmer message")
 
-	var payload MQTTpayload
-	err := json.Unmarshal(msg.Payload(), &payload)
+	deviceid, value, err := ParseMessage(msg)
 	if err != nil {
-		log.Fatalln(err.Error())
+		log.Error(err.Error())
+		return
 	}
 
-	s := strings.Split(msg.Topic(), "/")
-
-	deviceid, err := strconv.ParseInt(s[1], 10, 64)
-	if err != nil {
-		log.Fatalln(err.Error())
-	}
-
-	if payload.Value == 255 {
-		err = coap.SetState(deviceid, 1)
-	} else if payload.Value == 0 {
-		err = coap.SetState(deviceid, 0)
-	} else {
-		err = coap.SetLevel(deviceid, int(math.Round(float64(payload.Value)*2.54)))
+	switch value {
+	case 255:
+		_, err = coap.SetState(deviceid, 1)
+	case 0:
+		_, err = coap.SetState(deviceid, 0)
+	default:
+		_, err = coap.SetLevel(deviceid, int(math.Round(float64(value)*2.54)))
 	}
 
 	if err != nil {
 		log.WithFields(log.Fields{
-			"topic":   msg.Topic(),
-			"payload": string(msg.Payload()),
-			"error":   err.Error(),
-			// "payload": string(msg.Payload()),
-		}).Error("Dimmer message failed")
-	} else {
-		log.WithFields(log.Fields{
-			"topic":   msg.Topic(),
-			"payload": string(msg.Payload()),
-		}).Debug("Dimmer message done")
+			"error": err.Error(),
+		}).Error("Dimmer message error")
 	}
 
 }
@@ -111,17 +174,10 @@ func State(client mqtt.Client, msg mqtt.Message) {
 		state = 1
 	}
 
-	err = coap.SetState(deviceid, state)
+	_, err = coap.SetState(deviceid, state)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"topic": msg.Topic(),
 			"error": err.Error(),
-			// "payload": string(msg.Payload()),
-		}).Error("State message failed")
-	} else {
-		log.WithFields(log.Fields{
-			"topic":   msg.Topic(),
-			"payload": string(msg.Payload()),
-		}).Debug("State message done")
+		}).Error("Dimmer message error")
 	}
 }
