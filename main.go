@@ -52,7 +52,8 @@ func main() {
 	}
 
 	messages.SetClientConnection(_client)
-	handlers.Subscribe(_client)
+	handlers.Subscribe(_client, status_channel)
+	go handlers.HandleQueue()
 
 	tradfri.Start(false)
 

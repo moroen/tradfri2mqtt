@@ -5,6 +5,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -25,7 +26,38 @@ type MQTTgwConfig struct {
 	Key string
 }
 
-func Subscribe(client mqtt.Client) {
+type QueueItem struct {
+	Client  mqtt.Client
+	Message mqtt.Message
+	Handler func(mqtt.Client, mqtt.Message)
+	Retries int
+}
+
+var ItemQueue []QueueItem
+
+var _status_channel chan (error)
+
+func AddToQueue(client mqtt.Client, msg mqtt.Message, handler func(mqtt.Client, mqtt.Message)) {
+	var item = QueueItem{Client: client, Message: msg, Handler: handler}
+	ItemQueue = append(ItemQueue, item)
+}
+
+func HandleQueue() {
+	for {
+		if len(ItemQueue) > 0 {
+			log.Debug("Handling queue")
+			ItemQueue[0].Handler(ItemQueue[0].Client, ItemQueue[0].Message)
+			ItemQueue = ItemQueue[1:]
+		} else {
+			log.Debug("Queue is empty")
+		}
+		time.Sleep(time.Second * 2)
+	}
+}
+
+func Subscribe(client mqtt.Client, status_channel chan (error)) {
+	_status_channel = status_channel
+
 	if token := client.Subscribe("tradfri/+/38/+/cw/set", 0, SetHex); token.Wait() && token.Error() != nil {
 		log.Print(token.Error())
 	}
@@ -82,7 +114,7 @@ func SetHex(client mqtt.Client, msg mqtt.Message) {
 		return
 	}
 
-	if _, err = coap.SetHexForLevel(deviceid, value); err != nil {
+	if err = coap.SetHexForLevel(deviceid, value); err != nil {
 		log.WithFields(log.Fields{
 			"error": err.Error(),
 		}).Error("Color message error")
@@ -133,11 +165,11 @@ func Dimmer(client mqtt.Client, msg mqtt.Message) {
 
 	switch value {
 	case 255:
-		_, err = coap.SetState(deviceid, 1)
+		err = coap.SetState(deviceid, 1)
 	case 0:
-		_, err = coap.SetState(deviceid, 0)
+		err = coap.SetState(deviceid, 0)
 	default:
-		_, err = coap.SetLevel(deviceid, int(math.Round(float64(value)*2.54)))
+		err = coap.SetLevel(deviceid, int(math.Round(float64(value)*2.54)))
 	}
 
 	if err != nil {
@@ -174,8 +206,10 @@ func State(client mqtt.Client, msg mqtt.Message) {
 		state = 1
 	}
 
-	_, err = coap.SetState(deviceid, state)
+	err = coap.SetState(deviceid, state)
 	if err != nil {
+		// _status_channel <- fmt.Errorf("Plug failed")
+		AddToQueue(client, msg, State)
 		log.WithFields(log.Fields{
 			"error": err.Error(),
 		}).Error("Dimmer message error")

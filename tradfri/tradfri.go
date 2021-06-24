@@ -2,7 +2,6 @@ package tradfri
 
 import (
 	coap "github.com/moroen/go-tradfricoap"
-	"github.com/moroen/tradfri2mqtt/messages"
 	"github.com/moroen/tradfri2mqtt/settings"
 	log "github.com/sirupsen/logrus"
 )
@@ -16,7 +15,7 @@ func SetStatusChannel(c chan (error)) {
 func Start(reloadConfig bool) error {
 	coapConfig := settings.GetCoapConfig(reloadConfig)
 	coap.SetConfig(coapConfig)
-	go coap.Observe(messages.Show, status_channel)
+	// go coap.Observe(messages.Show, status_channel)
 	return nil
 }
 
