@@ -11,6 +11,7 @@ require (
 	github.com/ilyakaznacheev/cleanenv v1.2.5
 	github.com/moroen/go-tradfricoap v0.1.1
 	github.com/satori/go.uuid v1.2.0 // indirect
+	github.com/shibukawa/configdir v0.0.0-20170330084843-e180dbdc8da0
 	github.com/sirupsen/logrus v1.4.2
 	gopkg.in/yaml.v2 v2.4.0
 )

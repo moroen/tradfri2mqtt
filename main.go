@@ -51,6 +51,11 @@ func main() {
 		return
 	}
 
+	log.WithFields(log.Fields{
+		"Retry Limit": conf.Messages.RetryLimit,
+		"Retry Delay": conf.Messages.RetryDelay,
+	}).Debug("Starting messages system")
+
 	messages.SetClientConnection(_client)
 	handlers.Subscribe(_client, status_channel)
 	go handlers.HandleQueue()
