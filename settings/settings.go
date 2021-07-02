@@ -41,9 +41,10 @@ func GetConfig(force_reload bool) Config {
 	configDirs.LocalPath, _ = filepath.Abs("/config")
 
 	if folder := configDirs.QueryFolderContainsFile(("tradfri2mqtt.yml")); folder != nil {
-		file := fmt.Sprintf("%s%s", folder.Path, "tradfri2mqtt.yml")
+		file := fmt.Sprintf("%s/%s", folder.Path, "tradfri2mqtt.yml")
 		log.WithFields(log.Fields{
 			"Folder": folder.Path,
+			"File":   file,
 		}).Debug("Loading config")
 		cleanenv.ReadConfig(file, &_cfg)
 	} else {

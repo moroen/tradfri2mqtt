@@ -56,6 +56,8 @@ func main() {
 		"Retry Delay": conf.Messages.RetryDelay,
 	}).Debug("Starting messages system")
 
+	// fmt.Println(coap.GetLevelForHex(coap.CWSmap(), "dcf0f8"))
+
 	messages.SetClientConnection(_client)
 	handlers.Subscribe(_client, status_channel)
 	go handlers.HandleQueue()

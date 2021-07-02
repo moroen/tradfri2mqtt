@@ -51,10 +51,19 @@ func Show(msg []byte) error {
 			valueJson, err = json.Marshal(MQTTmessage{Value: 0})
 		}
 
+		SendTopic(topic, valueJson)
+
+		if info.ColorSpace != "" {
+			topic = fmt.Sprintf("tradfri/%d/38/1/%s", info.Id, info.ColorSpace)
+			if valueJson, err = json.Marshal(MQTTmessage{Value: info.HexLevel()}); err == nil {
+				SendTopic(topic, valueJson)
+			}
+		}
+
 		if err != nil {
 			log.Println(err.Error())
-			return err
 		}
+		return err
 
 	} else if info, err := coap.ParsePlugInfo(msg); err == nil {
 		topic = fmt.Sprintf("tradfri/%d/37/0/switch", info.Id)
