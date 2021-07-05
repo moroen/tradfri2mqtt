@@ -17,5 +17,14 @@ def registration():
     if request.method == 'POST' and form.validate_on_submit():
         return 'We confirm your registration!'
     return render_template('preferences.html', form=form)
+
+@app.route('/mqtt', methods=['GET', 'POST'])
+def page_mqtt():
+    form = TradfriForm(request.form)
+    if request.method == 'POST' and form.validate_on_submit():
+        return 'We confirm your registration!'
+    return render_template('mqtt.html', form=form)
+
+
 if __name__ == '__main__':
     app.run(debug=True)
