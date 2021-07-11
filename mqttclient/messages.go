@@ -1,4 +1,4 @@
-package messages
+package mqttclient
 
 import (
 	"encoding/json"
@@ -7,11 +7,8 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	mqtt "github.com/eclipse/paho.mqtt.golang"
 	coap "github.com/moroen/go-tradfricoap"
 )
-
-var _client mqtt.Client
 
 type MQTTmessage struct {
 	Value int `json:"value"`
@@ -20,21 +17,6 @@ type MQTTmessage struct {
 type MQTTboolMessage struct {
 	Value bool   `json:"value"`
 	Name  string `json:"nodeName"`
-}
-
-func SetClientConnection(client mqtt.Client) {
-	_client = client
-}
-
-func SendTopic(topic string, payload []byte) error {
-	if _client != nil {
-		if topic != "" {
-			_client.Publish(topic, 0, false, payload)
-		}
-	} else {
-		log.Fatal("MQTT client connection not set")
-	}
-	return nil
 }
 
 func Show(msg []byte) error {

@@ -1,4 +1,4 @@
-package handlers
+package mqttclient
 
 import (
 	"encoding/json"
@@ -35,8 +35,6 @@ type QueueItem struct {
 
 var ItemQueue []QueueItem
 
-var _status_channel chan (error)
-
 func AddToQueue(client mqtt.Client, msg mqtt.Message, handler func(mqtt.Client, mqtt.Message)) {
 	var item = QueueItem{Client: client, Message: msg, Handler: handler}
 	ItemQueue = append(ItemQueue, item)
@@ -57,6 +55,11 @@ func HandleQueue() {
 
 func Subscribe(client mqtt.Client, status_channel chan (error)) {
 	_status_channel = status_channel
+
+	if client == nil {
+		log.Fatal("Unable to subscribe, client is nil")
+		return
+	}
 
 	if token := client.Subscribe("tradfri/+/38/+/cw/set", 0, SetHex); token.Wait() && token.Error() != nil {
 		log.Print(token.Error())

@@ -1,4 +1,4 @@
-package handlers
+package mqttclient
 
 import (
 	"encoding/json"
@@ -9,9 +9,7 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	coap "github.com/moroen/go-tradfricoap"
-	"github.com/moroen/tradfri2mqtt/messages"
 	"github.com/moroen/tradfri2mqtt/settings"
-	"github.com/moroen/tradfri2mqtt/tradfri"
 )
 
 type MQTTstatus struct {
@@ -52,14 +50,13 @@ func gwConfig(gwconf MQTTgwConfig, client mqtt.Client) error {
 		if err != nil {
 			log.Error(err.Error())
 			if statusJson, err := json.Marshal(MQTTstatus{Status: "Error", Error: err.Error()}); err == nil {
-				return messages.SendTopic("tradfri/cmd/status/gwconfig", statusJson)
+				return SendTopic("tradfri/cmd/status/gwconfig", statusJson)
 			}
 		}
 
 		if statusJson, err := json.Marshal(MQTTstatus{Status: "Ok"}); err == nil {
 			log.Debug("gwConfig ok")
-			tradfri.ReStart()
-			return messages.SendTopic("tradfri/cmd/status/gwconfig", statusJson)
+			return SendTopic("tradfri/cmd/status/gwconfig", statusJson)
 		}
 		return nil
 	} else {

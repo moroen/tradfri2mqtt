@@ -9,6 +9,7 @@ replace github.com/moroen/gocoap/v4 => ../gocoap/v4
 require (
 	github.com/eclipse/paho.mqtt.golang v1.3.3
 	github.com/ilyakaznacheev/cleanenv v1.2.5
+	github.com/kisielk/godepgraph v0.0.0-20190626013829-57a7e4a651a9 // indirect
 	github.com/moroen/go-tradfricoap v0.1.1
 	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/shibukawa/configdir v0.0.0-20170330084843-e180dbdc8da0

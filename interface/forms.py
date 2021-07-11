@@ -1,5 +1,5 @@
 # model.py
-from wtforms import SubmitField, BooleanField, StringField, PasswordField, validators
+from wtforms import SubmitField, BooleanField, StringField, PasswordField, validators, BooleanField
 from flask_wtf import FlaskForm
 
 
@@ -11,4 +11,9 @@ class TradfriForm(FlaskForm):
 
 class MQTTForm(FlaskForm):
     host = StringField("Broker IP", [validators.DataRequired()])
+    port = StringField("Broker Port", [validators.DataRequired()], default="1883")
+    submit = SubmitField("Submit")
+
+class InterfaceForm(FlaskForm):
+    enabled = BooleanField("Enable http interface")
     submit = SubmitField("Submit")
