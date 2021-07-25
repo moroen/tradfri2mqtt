@@ -23,9 +23,10 @@ type Config struct {
 		Host string `yaml:"host" env:"MQTT_BROKER_HOST" env-default:"localhost"`
 	} `yaml:"mqtt"`
 	Tradfri struct {
-		Gateway  string `yaml:"gateway"`
-		Identity string `yaml:"ident"`
-		Passkey  string `yaml:"key"`
+		Gateway   string `yaml:"gateway"`
+		Identity  string `yaml:"ident"`
+		Passkey   string `yaml:"key"`
+		KeepAlive int    `yaml:"keepalive" env-default:"0"`
 	} `yaml:"tradfri"`
 }
 
@@ -43,8 +44,7 @@ func GetConfig(force_reload bool) Config {
 	if folder := configDirs.QueryFolderContainsFile(("tradfri2mqtt.yml")); folder != nil {
 		file := fmt.Sprintf("%s/%s", folder.Path, "tradfri2mqtt.yml")
 		log.WithFields(log.Fields{
-			"Folder": folder.Path,
-			"File":   file,
+			"File": file,
 		}).Debug("Loading config")
 		cleanenv.ReadConfig(file, &_cfg)
 	} else {
@@ -61,7 +61,6 @@ func WriteConfig(cfg *Config) (err error) {
 	if err != nil {
 		panic(err.Error())
 	}
-	log.Println("Saving config")
 
 	var folders []*configdir.Config
 
@@ -77,7 +76,7 @@ func WriteConfig(cfg *Config) (err error) {
 		}).Error("Error saving config")
 	} else {
 		log.WithFields(log.Fields{
-			"Folder": folders[0].Path,
+			"File": fmt.Sprintf("%s/tradfri2mqtt.yml", folders[0].Path),
 		}).Debug("Saving config")
 	}
 

@@ -46,8 +46,6 @@ func HandleQueue() {
 			log.Debug("Handling queue")
 			ItemQueue[0].Handler(ItemQueue[0].Client, ItemQueue[0].Message)
 			ItemQueue = ItemQueue[1:]
-		} else {
-			log.Debug("Queue is empty")
 		}
 		time.Sleep(time.Second * 2)
 	}
