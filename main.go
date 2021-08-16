@@ -9,7 +9,6 @@ import (
 	coap "github.com/moroen/go-tradfricoap"
 	"github.com/moroen/tradfri2mqtt/settings"
 	"github.com/moroen/tradfri2mqtt/tradfri"
-	"github.com/moroen/tradfri2mqtt/www"
 )
 
 var status_channel chan (error)
@@ -41,7 +40,7 @@ func main() {
 
 	var err error
 
-	go www.Interface_Server()
+	go Interface_Server()
 
 	for err == nil {
 		select {

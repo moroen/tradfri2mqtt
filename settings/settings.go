@@ -15,19 +15,19 @@ import (
 
 type Config struct {
 	Messages struct {
-		RetryLimit int `yaml:"retrylimit" env:"MESSAGE_RETRY_LIMIT" env-default:"5"`
-		RetryDelay int `yaml:"retrydelay" env:"MESSAGE_RETRY_DELAY" env-default:"10"`
-	} `yaml:"messages"`
+		RetryLimit int `json:"retryLimit" yaml:"retrylimit" env:"MESSAGE_RETRY_LIMIT" env-default:"5"`
+		RetryDelay int `json:"retryDelay" yaml:"retrydelay" env:"MESSAGE_RETRY_DELAY" env-default:"10"`
+	} `json:"messages" yaml:"messages"`
 	Mqtt struct {
-		Port string `yaml:"port" env:"MQTT_BROKER_PORT" env-default:"1883"`
-		Host string `yaml:"host" env:"MQTT_BROKER_HOST" env-default:"localhost"`
-	} `yaml:"mqtt"`
+		Port string `json:"port" yaml:"port" env:"MQTT_BROKER_PORT" env-default:"1883"`
+		Host string `json:"host" yaml:"host" env:"MQTT_BROKER_HOST" env-default:"localhost"`
+	} `json:"mqtt" yaml:"mqtt"`
 	Tradfri struct {
-		Gateway   string `yaml:"gateway"`
-		Identity  string `yaml:"ident"`
-		Passkey   string `yaml:"key"`
-		KeepAlive int    `yaml:"keepalive" env-default:"0"`
-	} `yaml:"tradfri"`
+		Gateway   string `json:"gateway" yaml:"gateway"`
+		Identity  string `json:"ident" yaml:"ident"`
+		Passkey   string `json:"key" yaml:"key"`
+		KeepAlive int    `json:"keepAlive" yaml:"keepalive" env-default:"0"`
+	} `json:"tradfri" yaml:"tradfri"`
 }
 
 var _cfg Config

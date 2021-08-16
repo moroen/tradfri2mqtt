@@ -8,9 +8,10 @@ replace github.com/moroen/gocoap/v4 => ../gocoap/v4
 
 require (
 	github.com/eclipse/paho.mqtt.golang v1.3.3
+	github.com/gin-contrib/cors v1.3.1
+	github.com/gin-contrib/static v0.0.1
 	github.com/gin-gonic/gin v1.7.2
 	github.com/ilyakaznacheev/cleanenv v1.2.5
-	github.com/kirves/go-form-it v0.0.0-20170609125405-d661c96bd6ad
 	github.com/moroen/go-tradfricoap v0.1.1
 	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/shibukawa/configdir v0.0.0-20170330084843-e180dbdc8da0
