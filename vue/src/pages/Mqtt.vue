@@ -3,12 +3,13 @@
     <!-- content -->
     <div> {{ gateway }} </div>
     <div> {{ id }} </div>
-    <div class="q-pa-md">
-      <q-btn label="Prompt" color="primary" @click="prompt"></q-btn>
-    </div>
 
+    <div>
+      <mqtt></mqtt>
+    </div>
+    <psk ref="foo"></psk>
   </q-page>
-  <psk ref="foo"></psk>
+
 </template>
 
 <script>
@@ -17,10 +18,12 @@ import { useStore } from "vuex";
 import getPSK from "../components/GetPSK.vue";
 import { useQuasar } from "quasar";
 import { ref } from "vue";
+import MQTTreader from "../components/MqttReader.vue";
 
 export default {
   components: {
-    psk: getPSK
+    psk: getPSK,
+    mqtt: MQTTreader
   },
 
   methods: {

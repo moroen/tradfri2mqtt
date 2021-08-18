@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	coap "github.com/moroen/go-tradfricoap"
+	"github.com/moroen/tradfri2mqtt/mqttclient"
 	"github.com/moroen/tradfri2mqtt/settings"
 	"github.com/moroen/tradfri2mqtt/tradfri"
 )
@@ -25,8 +26,9 @@ func main() {
 	conf := settings.GetConfig(false)
 	settings.WriteConfig(&conf)
 
-	// go mqttclient.Start(status_channel)
-	// go tradfri.Start(status_channel)
+	go mqttclient.Start(status_channel)
+	go tradfri.Start(status_channel)
+	go Interface_Server()
 
 	// time.Sleep(2 * time.Second)
 	//coap.ObserveRestart(true)
@@ -39,8 +41,6 @@ func main() {
 	*/
 
 	var err error
-
-	go Interface_Server()
 
 	for err == nil {
 		select {

@@ -59,11 +59,11 @@ func Subscribe(client mqtt.Client, status_channel chan (error)) {
 		return
 	}
 
-	if token := client.Subscribe("tradfri/+/38/+/cw/set", 0, SetHex); token.Wait() && token.Error() != nil {
+	if token := client.Subscribe("tradfri/+/38/+/WS/set", 0, SetHex); token.Wait() && token.Error() != nil {
 		log.Print(token.Error())
 	}
 
-	if token := client.Subscribe("tradfri/+/38/+/cws/set", 0, SetHex); token.Wait() && token.Error() != nil {
+	if token := client.Subscribe("tradfri/+/38/+/CWS/set", 0, SetHex); token.Wait() && token.Error() != nil {
 		log.Print(token.Error())
 	}
 
