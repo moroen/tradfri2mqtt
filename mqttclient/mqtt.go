@@ -65,6 +65,8 @@ func connectToBroker(client mqtt.Client) error {
 func Start(status_channel chan (error)) {
 	_status_channel = status_channel
 
+	log.Info("MQTT: Starting")
+
 	conf := settings.GetConfig(false)
 
 	var broker = conf.Mqtt.Host
@@ -87,5 +89,11 @@ func Start(status_channel chan (error)) {
 }
 
 func Stop() {
+	log.Info("MQTT: Stopping")
 	_client.Disconnect(250)
+}
+
+func Restart() {
+	Stop()
+	go Start(_status_channel)
 }

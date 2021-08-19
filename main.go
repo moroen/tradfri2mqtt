@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	coap "github.com/moroen/go-tradfricoap"
+	"github.com/moroen/tradfri2mqtt/errors"
 	"github.com/moroen/tradfri2mqtt/mqttclient"
 	"github.com/moroen/tradfri2mqtt/settings"
 	"github.com/moroen/tradfri2mqtt/tradfri"
@@ -45,8 +46,17 @@ func main() {
 	for err == nil {
 		select {
 		case err = <-status_channel:
-			fmt.Println(err.Error())
-			fmt.Println("Done")
+			log.Debug(err.Error())
+			if err == coap.ErrorNoConfig {
+				err = nil
+			} else if err == errors.ErrorConfigStale {
+				conf = settings.GetConfig(true)
+				mqttclient.Restart()
+				tradfri.ReStart()
+				err = nil
+			} else {
+				fmt.Println("Done")
+			}
 		default:
 			if conf.Tradfri.KeepAlive != 0 {
 				if diff := time.Since(latest_restart); diff > (time.Second * time.Duration(conf.Tradfri.KeepAlive)) {

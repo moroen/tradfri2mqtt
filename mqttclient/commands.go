@@ -9,6 +9,7 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	coap "github.com/moroen/go-tradfricoap"
+	"github.com/moroen/tradfri2mqtt/errors"
 	"github.com/moroen/tradfri2mqtt/settings"
 )
 
@@ -25,15 +26,16 @@ func Command(client mqtt.Client, msg mqtt.Message) {
 
 	s := strings.Split(msg.Topic(), "/")
 
-	var gwconf MQTTgwConfig
-	err := json.Unmarshal(msg.Payload(), &gwconf)
-	if err != nil {
-		log.Fatalln(err.Error())
-	}
-
 	switch s[2] {
 	case "gwconfig":
-		gwConfig(gwconf, client)
+		var gwconf MQTTgwConfig
+		err := json.Unmarshal(msg.Payload(), &gwconf)
+		if err != nil {
+			log.Fatalln(err.Error())
+		}
+		if err := gwConfig(gwconf, client); err == nil {
+			_status_channel <- errors.ErrorConfigStale
+		}
 	}
 
 }
@@ -56,7 +58,7 @@ func gwConfig(gwconf MQTTgwConfig, client mqtt.Client) error {
 
 		if statusJson, err := json.Marshal(MQTTstatus{Status: "Ok"}); err == nil {
 			log.Debug("gwConfig ok")
-			return SendTopic("tradfri/cmd/status/gwconfig", statusJson)
+			return SendTopic("tradfri/status/gwconfig", statusJson)
 		}
 		return nil
 	} else {

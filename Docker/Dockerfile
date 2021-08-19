@@ -1,7 +1,7 @@
 FROM alpine:latest AS builder
 
 # Install packages
-RUN apk --no-cache add git go
+RUN apk --no-cache add git go npm
 
 # Expose MQTT port
 EXPOSE 1883
@@ -20,6 +20,12 @@ WORKDIR /go/tradfri2mqtt
 RUN go get
 RUN go build -v
 
+WORKDIR /go/tradfri2mqtt/vue
+RUN npm install -g yarn
+RUN yarn
+RUN yarn global add @quasar/cli
+RUN quasar build
+
 FROM alpine:latest
 
 RUN apk --no-cache add mosquitto mosquitto-clients
@@ -27,6 +33,7 @@ RUN apk --no-cache add mosquitto mosquitto-clients
 RUN mkdir /config
 
 COPY --from=builder /go/tradfri2mqtt/tradfri2mqtt /opt/tradfri2mqtt/tradfri2mqtt
+COPY --from=builder /go/tradfri2mqtt/www/ /opt/tradfri2mqtt/www/
 COPY mosquitto.conf /etc/mosquitto/mosquitto.conf
 COPY run.sh /opt/tradfri2mqtt/run.sh
 
