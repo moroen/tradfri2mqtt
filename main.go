@@ -29,7 +29,7 @@ func main() {
 
 	go mqttclient.Start(status_channel)
 	go tradfri.Start(status_channel)
-	go Interface_Server()
+	go Interface_Server(conf.Interface.ServerRoot)
 
 	// time.Sleep(2 * time.Second)
 	//coap.ObserveRestart(true)

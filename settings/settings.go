@@ -19,7 +19,7 @@ type Config struct {
 		RetryDelay int `json:"retryDelay" yaml:"retrydelay" env:"MESSAGE_RETRY_DELAY" env-default:"10"`
 	} `json:"messages" yaml:"messages"`
 	Mqtt struct {
-		Port string `json:"port" yaml:"port" env:"MQTT_BROKER_PORT" env-default:"1883"`
+		Port string `json:"port" yaml:"port" c`
 		Host string `json:"host" yaml:"host" env:"MQTT_BROKER_HOST" env-default:"localhost"`
 	} `json:"mqtt" yaml:"mqtt"`
 	Tradfri struct {
@@ -28,6 +28,9 @@ type Config struct {
 		Passkey   string `json:"key" yaml:"key"`
 		KeepAlive int    `json:"keepAlive" yaml:"keepalive" env-default:"0"`
 	} `json:"tradfri" yaml:"tradfri"`
+	Interface struct {
+		ServerRoot string `json:"gateway" yaml:"gateway" env:"MQTT_INTERFACE_ROOT" env-default:"./www"`
+	} `json:"interface" yaml:"interface"`
 }
 
 var _cfg Config

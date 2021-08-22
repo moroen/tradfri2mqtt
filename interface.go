@@ -52,7 +52,11 @@ func CORS() gin.HandlerFunc {
 	}
 }
 
-func Interface_Server() {
+var _server_root string
+
+func Interface_Server(server_root string) {
+
+	_server_root = server_root
 
 	logger.SetLevel(logrus.DebugLevel)
 	logger.SetFormatter(&logrus.JSONFormatter{})
@@ -60,7 +64,7 @@ func Interface_Server() {
 	r := gin.Default()
 	r.Use(CORS())
 
-	r.Use(static.Serve("/", static.LocalFile("./www", false)))
+	r.Use(static.Serve("/", static.LocalFile(_server_root, false)))
 
 	r.GET("/api/v1/hello", func(c *gin.Context) {
 		c.JSON(200, `{"message":"hello, hello, hello"}`)
