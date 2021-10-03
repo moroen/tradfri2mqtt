@@ -2,6 +2,7 @@ package mqttclient
 
 import (
 	"encoding/json"
+	"fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -14,7 +15,11 @@ import (
 )
 
 type MQTTpayload struct {
-	Value int
+	Value int64
+}
+
+type MQTTStatePayload struct {
+	State string
 }
 
 type MQTTboolPayload struct {
@@ -85,13 +90,46 @@ func Subscribe(client mqtt.Client, status_channel chan (error)) {
 
 }
 
-func ParseMessage(msg mqtt.Message) (deviceid int64, value int, err error) {
+func ParseMessage(msg mqtt.Message) (deviceid int64, value int64, err error) {
 	var payload MQTTpayload
-	err = json.Unmarshal(msg.Payload(), &payload)
-	if err != nil {
-		log.Fatalln(err.Error())
-		return 0, 0, err
+
+	u := map[string]interface{}{}
+
+	if err = json.Unmarshal(msg.Payload(), &u); err == nil {
+		fmt.Println(u)
+
+		if u["state"] != nil {
+			if u["state"].(string) == "OFF" {
+				payload = MQTTpayload{Value: 0}
+
+			} else if u["state"].(string) == "ON" {
+				payload = MQTTpayload{Value: 255}
+			}
+		} else if u["value"] != nil {
+			payload = MQTTpayload{Value: int64(u["value"].(float64))}
+		}
+
+	} else if val, err := strconv.ParseInt(string(msg.Payload()), 10, 64); err == nil {
+		if val == 99 {
+			payload = MQTTpayload{Value: 255}
+		} else {
+			payload = MQTTpayload{Value: val}
+		}
+
+	} else {
+		str := strings.ToLower(string(msg.Payload()))
+		fmt.Println(str)
+		if str == "off" {
+			payload = MQTTpayload{Value: 0}
+		} else if str == "on" {
+			payload = MQTTpayload{Value: 255}
+		} else {
+			log.Fatalln(err.Error())
+			return 0, 0, err
+		}
 	}
+
+	fmt.Println(payload.Value)
 
 	s := strings.Split(msg.Topic(), "/")
 
@@ -184,15 +222,29 @@ func Dimmer(client mqtt.Client, msg mqtt.Message) {
 func State(client mqtt.Client, msg mqtt.Message) {
 	// fmt.Printf("Received state message: %s from topic: %s\n", msg.Payload(), msg.Topic())
 
+	state := -1
+
 	log.WithFields(log.Fields{
-		"topic":   msg.Topic(),
-		"payload": string(msg.Payload()),
+		"topic":         msg.Topic(),
+		"payload_bytes": msg.Payload(),
+		"payload":       string(msg.Payload()),
 	}).Debug("Received state message")
 
-	var payload MQTTboolPayload
-	err := json.Unmarshal(msg.Payload(), &payload)
-	if err != nil {
-		log.Fatalln(err.Error())
+	if bValue, err := strconv.ParseBool(string(msg.Payload())); err == nil {
+		if bValue {
+			state = 1
+		} else {
+			state = 0
+		}
+	} else {
+		var payload MQTTboolPayload
+		if err := json.Unmarshal(msg.Payload(), &payload); err == nil {
+			if payload.Value {
+				state = 1
+			} else {
+				state = 0
+			}
+		}
 	}
 
 	s := strings.Split(msg.Topic(), "/")
@@ -202,17 +254,12 @@ func State(client mqtt.Client, msg mqtt.Message) {
 		log.Fatalln(err.Error())
 	}
 
-	var state int
-	if payload.Value {
-		state = 1
-	}
-
 	err = coap.SetState(deviceid, state)
 	if err != nil {
 		// _status_channel <- fmt.Errorf("Plug failed")
 		AddToQueue(client, msg, State)
 		log.WithFields(log.Fields{
 			"error": err.Error(),
-		}).Error("Dimmer message error")
+		}).Error("Switch message error")
 	}
 }

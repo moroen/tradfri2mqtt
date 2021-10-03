@@ -57,6 +57,7 @@ var _server_root string
 func Interface_Server(server_root string) {
 
 	_server_root = server_root
+	fmt.Print(server_root)
 
 	logger.SetLevel(logrus.DebugLevel)
 	logger.SetFormatter(&logrus.JSONFormatter{})
@@ -74,6 +75,18 @@ func Interface_Server(server_root string) {
 		conf := settings.GetConfig(false)
 
 		c.JSON(200, conf)
+	})
+
+	r.POST("/api/settings", func(c *gin.Context) {
+		var conf settings.Config
+
+		if err := c.ShouldBind(&conf); err == nil {
+			fmt.Println(conf)
+			ret := conf
+			c.JSON(200, ret)
+		} else {
+			c.JSON(400, err.Error())
+		}
 	})
 
 	r.POST("/api/getPSK", func(c *gin.Context) {

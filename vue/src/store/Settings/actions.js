@@ -1,4 +1,4 @@
-/*
-export function someAction (context) {
+export const save = (context) => {
+    console.log("Save Settings");
 }
-*/
+

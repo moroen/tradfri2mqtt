@@ -3,6 +3,7 @@ package mqttclient
 import (
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/moroen/tradfri2mqtt/settings"
@@ -13,6 +14,8 @@ import (
 
 var _client mqtt.Client
 var _status_channel chan (error)
+
+var _wg *sync.WaitGroup
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	fmt.Printf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
@@ -36,7 +39,10 @@ func SendTopic(topic string, payload []byte) error {
 	if client := GetMQTTClientConnection(); client != nil {
 		client.Publish(topic, 0, false, payload)
 	} else {
-		log.Fatal("MQTT client connection not set")
+		log.WithFields(log.Fields{
+			"topic":   string(topic),
+			"payload": string(payload),
+		}).Error("MQTT client connection not set")
 	}
 	return nil
 }
@@ -62,8 +68,11 @@ func connectToBroker(client mqtt.Client) error {
 	return nil
 }
 
-func Start(status_channel chan (error)) {
+func Start(wg *sync.WaitGroup, status_channel chan (error)) {
 	_status_channel = status_channel
+	_wg = wg
+
+	_wg.Add(1)
 
 	log.Info("MQTT: Starting")
 
@@ -89,11 +98,24 @@ func Start(status_channel chan (error)) {
 }
 
 func Stop() {
-	log.Info("MQTT: Stopping")
-	_client.Disconnect(250)
+	if _wg != nil {
+		defer _wg.Done()
+	}
+
+	if _client != nil {
+		log.Info("MQTT: Stopping")
+		_client.Disconnect(250)
+		log.Info("MQTT: Stopped")
+
+	}
 }
 
 func Restart() {
 	Stop()
-	go Start(_status_channel)
+	go Start(_wg, _status_channel)
+}
+
+func Do_Test(wg *sync.WaitGroup) {
+	defer wg.Done()
+	wg.Add(1)
 }

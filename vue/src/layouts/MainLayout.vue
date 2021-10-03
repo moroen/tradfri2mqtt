@@ -26,7 +26,9 @@
       <router-view />
     </q-page-container>
     <q-footer elevated>
-      <div>Bottom</div>
+      <div>
+        <FooterButtons />
+      </div>
     </q-footer>
   </q-layout>
 </template>
@@ -34,6 +36,7 @@
 <script>
 import EssentialLink from "components/EssentialLink.vue";
 import Navigation from "src/components/Navigation.vue";
+import FooterButtons from "src/components/FooterButtons";
 
 const linksList = [
   {
@@ -87,7 +90,8 @@ export default defineComponent({
 
   components: {
     EssentialLink,
-    Navigation
+    Navigation,
+    FooterButtons
   },
 
   setup() {
