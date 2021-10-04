@@ -36,6 +36,7 @@ type DimmerConfig struct {
 	// BrightnessStateTopic    string     `json:"brightness_state_topic"`
 	// BrightnessValueTemplate string     `json:"brightness_value_template"`
 	// OnCommandType       string     `json:"on_command_type"`
+	Brightness          string     `json:"brightness"`
 	Device              DeviceInfo `json:"device"`
 	Name                string     `json:"name"`
 	UniqueID            string     `json:"unique_id"`
@@ -53,11 +54,28 @@ func SendConfigObject(msg []byte) {
 		uniqueID := fmt.Sprintf("tradfri_%d_light", light.Id)
 		idents := []string{uniqueID}
 
-		color_modes := []string{"rgb"}
+		var color_mode string
+		var brightness string
+		var color_modes []string
 
 		// aConfig := DimmerConfig{StateValueTemplate: "{{ \"OFF\" if value_json.value == 0 else \"ON\" }}", CommandTopic: cmdTopic, StateTopic: stTopic, BrightnessCommandTopic: cmdTopic, BrightnessScale: 99, BrightnessStateTopic: stTopic, BrightnessValueTemplate: "{{ value_json.value }}", OnCommandType: "brightness", Name: light.Name, UniqueID: uniqueID, Device: DeviceInfo{Manufacturer: light.Manufacturer, Identifiers: idents, Model: light.Model, Name: light.Name}}
 
-		aConfig := DimmerConfig{BrightnessScale: 255, ColorMode: "true", SupportedColorModes: color_modes, CommandTopic: cmdTopic, StateTopic: stTopic, Name: light.Name, UniqueID: uniqueID, Device: DeviceInfo{Manufacturer: light.Manufacturer, Identifiers: idents, Model: light.Model, Name: light.Name}}
+		switch light.ColorSpace {
+		case "WW":
+			brightness = "true"
+			color_mode = "false"
+			color_modes = []string{""}
+		case "CWS":
+			brightness = "true"
+			color_mode = "true"
+			color_modes = []string{"xy"}
+		case "WS":
+			brightness = "true"
+			color_mode = "false"
+			color_modes = []string{}
+		}
+
+		aConfig := DimmerConfig{Brightness: brightness, BrightnessScale: 255, ColorMode: color_mode, SupportedColorModes: color_modes, CommandTopic: cmdTopic, StateTopic: stTopic, Name: light.Name, UniqueID: uniqueID, Device: DeviceInfo{Manufacturer: light.Manufacturer, Identifiers: idents, Model: light.Model, Name: light.Name}}
 
 		// pretty_print(aConfig)
 		payload, err := json.Marshal(aConfig)

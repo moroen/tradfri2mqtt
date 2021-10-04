@@ -92,7 +92,7 @@ func Start(wg *sync.WaitGroup, status_channel chan (error)) {
 	if err := connectToBroker(_client); err == nil {
 		go HandleQueue()
 	} else {
-		status_channel <- errors.New("Broker not connected, giving up")
+		status_channel <- errors.New("broker not connected, giving up")
 	}
 
 }

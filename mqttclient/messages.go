@@ -3,7 +3,6 @@ package mqttclient
 import (
 	"encoding/json"
 	"fmt"
-	"math"
 
 	log "github.com/sirupsen/logrus"
 
@@ -18,6 +17,11 @@ type MQTTboolMessage struct {
 	Value bool `json:"value"`
 }
 
+type MQTTdimmmerMessage struct {
+	State      string `json:"state"`
+	Brightness int    `json:"brightness"`
+}
+
 func Show(msg []byte) error {
 	// fmt.Printf("%s\n", msg)
 
@@ -28,13 +32,27 @@ func Show(msg []byte) error {
 
 	if info, err := coap.ParseLightInfo(msg); err == nil {
 		topic = fmt.Sprintf("tradfri/%d/38/0/dimmer", info.Id)
+
+		var state string
 		if info.State {
-			valueJson, err = json.Marshal(MQTTmessage{Value: int(math.Round(float64(info.Dimmer) / 2.54))})
+			state = "ON"
 		} else {
-			valueJson, err = json.Marshal(MQTTmessage{Value: 0})
+			state = "OFF"
 		}
 
-		SendTopic(topic, valueJson)
+		if message, err := json.Marshal(MQTTdimmmerMessage{State: state, Brightness: int(info.Dimmer)}); err == nil {
+			log.WithFields(log.Fields{
+				"Function": "Show - Send dimmer message",
+				"Topic":    topic,
+				"Message":  string(message),
+			}).Debug()
+			SendTopic(topic, message)
+		} else {
+			log.WithFields(log.Fields{
+				"Function": "Show - Send dimmer message",
+				"Error":    err.Error(),
+			}).Error()
+		}
 
 		/*
 			if info.ColorSpace != "" {
