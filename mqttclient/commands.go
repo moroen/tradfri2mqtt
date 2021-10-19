@@ -52,13 +52,13 @@ func gwConfig(gwconf MQTTgwConfig, client mqtt.Client) error {
 		if err != nil {
 			log.Error(err.Error())
 			if statusJson, err := json.Marshal(MQTTstatus{Status: "Error", Error: err.Error()}); err == nil {
-				return SendTopic("tradfri/cmd/status/gwconfig", statusJson)
+				return SendTopic("tradfri/cmd/status/gwconfig", statusJson, false)
 			}
 		}
 
 		if statusJson, err := json.Marshal(MQTTstatus{Status: "Ok"}); err == nil {
 			log.Debug("gwConfig ok")
-			return SendTopic("tradfri/status/gwconfig", statusJson)
+			return SendTopic("tradfri/status/gwconfig", statusJson, false)
 		}
 		return nil
 	} else {

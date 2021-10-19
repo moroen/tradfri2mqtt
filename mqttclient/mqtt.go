@@ -35,9 +35,9 @@ func GetMQTTClientConnection() mqtt.Client {
 	return _client
 }
 
-func SendTopic(topic string, payload []byte) error {
+func SendTopic(topic string, payload []byte, retained bool) error {
 	if client := GetMQTTClientConnection(); client != nil {
-		client.Publish(topic, 0, false, payload)
+		client.Publish(topic, 0, retained, payload)
 	} else {
 		log.WithFields(log.Fields{
 			"topic":   string(topic),

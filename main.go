@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -32,8 +33,7 @@ func main() {
 
 	status_channel = make(chan error)
 
-	conf := settings.GetConfig(false)
-	settings.WriteConfig(&conf)
+	settings.GetConfig(false)
 
 	go mqttclient.Start(&wg, status_channel)
 
@@ -82,5 +82,7 @@ func main() {
 			}
 		}
 	}()
+	time.Sleep(5 * time.Second)
+	// coap.ObserveRestart(false)
 	wg.Wait()
 }

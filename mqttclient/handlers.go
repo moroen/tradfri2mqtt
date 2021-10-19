@@ -74,7 +74,7 @@ func Subscribe(client mqtt.Client, status_channel chan (error)) {
 		log.Print(token.Error())
 	}
 
-	if token := client.Subscribe("tradfri/+/38/+/blind/set", 0, Blind); token.Wait() && token.Error() != nil {
+	if token := client.Subscribe("tradfri/+/blind/set", 0, Blind); token.Wait() && token.Error() != nil {
 		log.Print(token.Error())
 	}
 
@@ -88,18 +88,21 @@ func Subscribe(client mqtt.Client, status_channel chan (error)) {
 
 }
 
-type ColorMessage struct {
+type MQTTStateMessage struct {
 	Color struct {
 		X float64 `json:"x"`
 		Y float64 `json:"y"`
 	} `json:"color"`
 	State      string `json:"state"`
 	Brightness int    `json:"brightness"`
+	ColorTemp  int    `json:"color_temp"`
+	Position   int    `json:"position"`
 }
 
-func ParseMessage(msg mqtt.Message) (deviceid int64, state int, level int, x int64, y int64, err error) {
+func ParseMessage(msg mqtt.Message) (deviceid int64, state int, level int, x int64, y int64, color_temp int, err error) {
 
-	message := ColorMessage{Brightness: -1}
+	message := MQTTStateMessage{Brightness: -1, Position: -1}
+	message.ColorTemp = -1
 	message.Color.X = -1
 	message.Color.Y = -1
 
@@ -110,7 +113,7 @@ func ParseMessage(msg mqtt.Message) (deviceid int64, state int, level int, x int
 		deviceid, err = strconv.ParseInt(s[1], 10, 64)
 		if err != nil {
 			log.Fatalln(err.Error())
-			return 0, 0, 0, -1, -1, err
+			return 0, 0, 0, -1, -1, -1, err
 		}
 
 		switch message.State {
@@ -122,13 +125,6 @@ func ParseMessage(msg mqtt.Message) (deviceid int64, state int, level int, x int
 			state = -1
 		}
 
-		/*
-			if message.Color.R != -1 {
-				hex = fmt.Sprintf("#%02x%02x%02x", message.Color.R, message.Color.G, message.Color.B)
-			} else {
-				hex = ""
-			}
-		*/
 		if message.Color.X != -1 {
 			x = int64(message.Color.X * 65535)
 		} else {
@@ -141,13 +137,16 @@ func ParseMessage(msg mqtt.Message) (deviceid int64, state int, level int, x int
 			y = -1
 		}
 
-		return deviceid, state, message.Brightness, x, y, nil
+		if message.Position != -1 {
+			return deviceid, state, message.Position, x, y, message.ColorTemp, nil
+		} else {
+			return deviceid, state, message.Brightness, x, y, message.ColorTemp, nil
+		}
 	} else {
 		log.WithFields(log.Fields{
-			"Function": "ParseMessage - Unmarshal",
-			"Error":    err.Error(),
-		})
-		return 0, 0, 0, -1, -1, err
+			"Error": err.Error(),
+		}).Error("PrseMessage - Unmarshal")
+		return 0, 0, 0, -1, -1, -1, err
 	}
 }
 
@@ -176,25 +175,21 @@ func Blind(client mqtt.Client, msg mqtt.Message) {
 		"payload": string(msg.Payload()),
 	}).Debug("Received blind message")
 
-	deviceid, _, value, _, _, err := ParseMessage(msg)
+	deviceid, _, value, _, _, _, err := ParseMessage(msg)
 	if err != nil {
 		log.Error(err.Error())
 		return
 	}
 
-	switch value {
-	case 255:
-		_, err = coap.SetBlind(deviceid, 100)
-	case 0:
-		_, err = coap.SetBlind(deviceid, 0)
-	default:
-		_, err = coap.SetBlind(deviceid, value)
-	}
+	log.WithFields(log.Fields{
+		"DeviceID": deviceid,
+		"Position": value,
+	}).Debug("Handlers - Blind")
 
-	if err != nil {
+	if _, err := coap.SetBlind(deviceid, value); err != nil {
 		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Error("Blind message error")
+			"Error": err.Error(),
+		}).Error("Handlers - Blind")
 	}
 }
 
@@ -206,7 +201,7 @@ func Dimmer(client mqtt.Client, msg mqtt.Message) {
 		"payload": string(msg.Payload()),
 	}).Debug("Received dimmer message")
 
-	deviceid, state, level, x, y, err := ParseMessage(msg)
+	deviceid, state, level, x, y, col_temp, err := ParseMessage(msg)
 	if err != nil {
 		log.Error(err.Error())
 		return
@@ -217,32 +212,42 @@ func Dimmer(client mqtt.Client, msg mqtt.Message) {
 		"Level": level,
 		"X":     x,
 		"Y":     y,
-	}).Debug()
+	}).Debug("MQTT-handlers - Dimmer")
 
 	if state != -1 {
 		if err := coap.SetState(deviceid, state); err != nil {
 			log.WithFields(log.Fields{
-				"Function": "MQTT-handlers - Dimmer - SetState",
-				"Error":    err.Error(),
-			}).Error()
+				"Error": err.Error(),
+			}).Error("MQTT-handlers - Dimmer - SetState")
 		}
 	}
 
 	if level != -1 {
 		if err := coap.SetLevel(deviceid, level); err != nil {
 			log.WithFields(log.Fields{
-				"Function": "MQTT-handlers - Dimmer - SetLevel",
-				"Error":    err.Error(),
-			}).Error()
+				"Error": err.Error(),
+			}).Error("MQTT-handlers - Dimmer - SetLevel")
 		}
 	}
 
 	if x != -1 {
 		if err := coap.SetXY(deviceid, x, y); err != nil {
 			log.WithFields(log.Fields{
-				"Function": "MQTT-handlers - Dimmer - SetXY",
-				"Error":    err.Error(),
-			}).Error()
+				"Error": err.Error(),
+			}).Error("MQTT-handlers - Dimmer - SetXY")
+		}
+	}
+
+	if col_temp != -1 {
+		log.WithFields(log.Fields{
+			"col_temp": col_temp,
+		}).Debug("MQTT-handlers - Dimmer - SetColorTemp")
+		if col_temp >= 350 {
+			coap.SetHexForLevel(deviceid, 30)
+		} else if col_temp < 280 {
+			coap.SetHexForLevel(deviceid, 10)
+		} else {
+			coap.SetHexForLevel(deviceid, 20)
 		}
 	}
 

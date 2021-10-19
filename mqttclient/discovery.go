@@ -44,6 +44,19 @@ type DimmerConfig struct {
 	SupportedColorModes []string   `json:"supported_color_modes"`
 }
 
+type BlindConfig struct {
+	CommandTopic        string     `json:"command_topic"`
+	PositionTopic       string     `json:"position_topic"`
+	SetPositionTopic    string     `json:"set_position_topic"`
+	SetPositionTemplate string     `json:"set_position_template"`
+	PayloadOpen         string     `json:"payload_open"`
+	PayloadClose        string     `json:"payload_close"`
+	CoverHasStopCommand bool       `json:"cover_has_stop_command"`
+	Device              DeviceInfo `json:"device"`
+	Name                string     `json:"name"`
+	UniqueID            string     `json:"unique_id"`
+}
+
 func SendConfigObject(msg []byte) {
 
 	if light, err := coap.ParseLightInfo(msg); err == nil {
@@ -64,7 +77,7 @@ func SendConfigObject(msg []byte) {
 		case "WW":
 			brightness = "true"
 			color_mode = "false"
-			color_modes = []string{""}
+			color_modes = []string{}
 		case "CWS":
 			brightness = "true"
 			color_mode = "true"
@@ -72,10 +85,25 @@ func SendConfigObject(msg []byte) {
 		case "WS":
 			brightness = "true"
 			color_mode = "false"
-			color_modes = []string{}
+			color_modes = []string{"color_temp"}
 		}
 
-		aConfig := DimmerConfig{Brightness: brightness, BrightnessScale: 255, ColorMode: color_mode, SupportedColorModes: color_modes, CommandTopic: cmdTopic, StateTopic: stTopic, Name: light.Name, UniqueID: uniqueID, Device: DeviceInfo{Manufacturer: light.Manufacturer, Identifiers: idents, Model: light.Model, Name: light.Name}}
+		aConfig := DimmerConfig{
+			Brightness:          brightness,
+			BrightnessScale:     255,
+			ColorMode:           color_mode,
+			SupportedColorModes: color_modes,
+			CommandTopic:        cmdTopic,
+			StateTopic:          stTopic,
+			Name:                light.Name,
+			UniqueID:            uniqueID,
+			Device: DeviceInfo{
+				Manufacturer: light.Manufacturer,
+				Identifiers:  idents,
+				Model:        light.Model,
+				Name:         light.Name,
+			},
+		}
 
 		// pretty_print(aConfig)
 		payload, err := json.Marshal(aConfig)
@@ -85,13 +113,27 @@ func SendConfigObject(msg []byte) {
 
 		topic := fmt.Sprintf("homeassistant/light/%d/config", light.Id)
 
-		SendTopic(topic, payload)
+		SendTopic(topic, payload, true)
 	} else if plug, err := coap.ParsePlugInfo(msg); err == nil {
 		cmdTopic := fmt.Sprintf("tradfri/%d/37/0/switch/set", plug.Id)
 		stdTopic := fmt.Sprintf("tradfri/%d/37/0/switch", plug.Id)
 		uniqueID := fmt.Sprintf("tradfri_%d_switch", plug.Id)
 		idents := []string{uniqueID}
-		aConfig := SwitchConfig{PayloadOn: true, PayloadOff: false, ValueTemplate: "{{ value_json.value }}", CommandTopic: cmdTopic, StateTopic: stdTopic, Name: plug.Name, UniqueID: uniqueID, Device: DeviceInfo{Manufacturer: plug.Manufacturer, Identifiers: idents, Model: plug.Model, Name: plug.Name}}
+		aConfig := SwitchConfig{
+			PayloadOn:     true,
+			PayloadOff:    false,
+			ValueTemplate: "{{ value_json.value }}",
+			CommandTopic:  cmdTopic,
+			StateTopic:    stdTopic,
+			Name:          plug.Name,
+			UniqueID:      uniqueID,
+			Device: DeviceInfo{
+				Manufacturer: plug.Manufacturer,
+				Identifiers:  idents,
+				Model:        plug.Model,
+				Name:         plug.Name,
+			},
+		}
 
 		// pretty_print(aConfig)
 
@@ -100,8 +142,34 @@ func SendConfigObject(msg []byte) {
 			log.Fatal(err.Error())
 		}
 
-		SendTopic(fmt.Sprintf("homeassistant/switch/%d/config", plug.Id), payload)
+		SendTopic(fmt.Sprintf("homeassistant/switch/%d/config", plug.Id), payload, true)
 
+	} else if blind, err := coap.ParseBlindInfo(msg); err == nil {
+		cmdTopic := fmt.Sprintf("tradfri/%d/blind/set", blind.Id)
+		posTopic := fmt.Sprintf("tradfri/%d/blind", blind.Id)
+		setPosTopic := fmt.Sprintf("tradfri/%d/blind/set", blind.Id)
+		uniqueID := fmt.Sprintf("tradfri_%d_blind", blind.Id)
+		idents := []string{uniqueID}
+
+		aConfig := BlindConfig{
+			CommandTopic:        cmdTopic,
+			PositionTopic:       posTopic,
+			SetPositionTopic:    setPosTopic,
+			SetPositionTemplate: "{{ \"position\": position }}",
+			PayloadOpen:         "{ \"position\": 0 }",
+			PayloadClose:        "{ \"position\": 100 }",
+			UniqueID:            uniqueID,
+			Device:              DeviceInfo{Manufacturer: blind.Manufacturer, Identifiers: idents, Model: blind.Model, Name: blind.Name},
+			Name:                blind.Name,
+			CoverHasStopCommand: false,
+		}
+
+		payload, err := json.Marshal(aConfig)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+
+		SendTopic(fmt.Sprintf("homeassistant/cover/%d/config", blind.Id), payload, true)
 	}
 
 	/*
