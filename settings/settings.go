@@ -90,9 +90,10 @@ func GetCoapConfig(force_reload bool) coap.GatewayConfig {
 	cfg := GetConfig(force_reload)
 
 	coapSettings := coap.GatewayConfig{
-		Gateway:  cfg.Tradfri.Gateway,
-		Identity: cfg.Tradfri.Identity,
-		Passkey:  cfg.Tradfri.Passkey,
+		Gateway:   cfg.Tradfri.Gateway,
+		Identity:  cfg.Tradfri.Identity,
+		Passkey:   cfg.Tradfri.Passkey,
+		KeepAlive: cfg.Tradfri.KeepAlive,
 	}
 	return coapSettings
 }

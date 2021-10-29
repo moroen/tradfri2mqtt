@@ -6,7 +6,6 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -82,7 +81,8 @@ func main() {
 			}
 		}
 	}()
-	time.Sleep(5 * time.Second)
+	// time.Sleep(5 * time.Second)
 	// coap.ObserveRestart(false)
+	// tradfri.Stop()
 	wg.Wait()
 }

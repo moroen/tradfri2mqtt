@@ -21,7 +21,7 @@ type MQTTStatePayload struct {
 }
 
 type MQTTboolPayload struct {
-	Value bool
+	Value string
 }
 
 type MQTTgwConfig struct {
@@ -62,15 +62,15 @@ func Subscribe(client mqtt.Client, status_channel chan (error)) {
 		return
 	}
 
-	if token := client.Subscribe("tradfri/+/38/+/WS/set", 0, SetHex); token.Wait() && token.Error() != nil {
+	if token := client.Subscribe("tradfri/+/WS/set", 0, SetHex); token.Wait() && token.Error() != nil {
 		log.Print(token.Error())
 	}
 
-	if token := client.Subscribe("tradfri/+/38/+/CWS/set", 0, SetHex); token.Wait() && token.Error() != nil {
+	if token := client.Subscribe("tradfri/+/CWS/set", 0, SetHex); token.Wait() && token.Error() != nil {
 		log.Print(token.Error())
 	}
 
-	if token := client.Subscribe("tradfri/+/38/+/dimmer/set", 0, Dimmer); token.Wait() && token.Error() != nil {
+	if token := client.Subscribe("tradfri/+/dimmer/set", 0, Dimmer); token.Wait() && token.Error() != nil {
 		log.Print(token.Error())
 	}
 
@@ -78,7 +78,7 @@ func Subscribe(client mqtt.Client, status_channel chan (error)) {
 		log.Print(token.Error())
 	}
 
-	if token := client.Subscribe("tradfri/+/37/+/switch/set", 0, State); token.Wait() && token.Error() != nil {
+	if token := client.Subscribe("tradfri/+/switch/set", 0, State); token.Wait() && token.Error() != nil {
 		log.Print(token.Error())
 	}
 
@@ -291,7 +291,7 @@ func State(client mqtt.Client, msg mqtt.Message) {
 	} else {
 		var payload MQTTboolPayload
 		if err := json.Unmarshal(msg.Payload(), &payload); err == nil {
-			if payload.Value {
+			if payload.Value == "true" {
 				state = 1
 			} else {
 				state = 0

@@ -95,6 +95,8 @@ func Start(wg *sync.WaitGroup, status_channel chan (error)) {
 		status_channel <- errors.New("broker not connected, giving up")
 	}
 
+	discovered = make(map[int64]struct{})
+
 }
 
 func Stop() {

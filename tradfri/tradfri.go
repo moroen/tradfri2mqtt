@@ -10,9 +10,10 @@ import (
 )
 
 func Start(wg *sync.WaitGroup, status_channel chan (error)) {
-	coap.SetConfig(settings.GetCoapConfig(true))
+	conf := settings.GetCoapConfig(true)
+	coap.SetConfig(conf)
 
-	_, err := coap.Observe(wg, mqttclient.Show)
+	_, err := coap.Observe(wg, mqttclient.SendState, conf.KeepAlive)
 	if err != nil {
 		log.Error(err.Error())
 	}
