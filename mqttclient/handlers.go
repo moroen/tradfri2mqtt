@@ -2,6 +2,7 @@ package mqttclient
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -45,6 +46,7 @@ func AddToQueue(client mqtt.Client, msg mqtt.Message, handler func(mqtt.Client, 
 
 func HandleQueue() {
 	for {
+		fmt.Println(ItemQueue)
 		if len(ItemQueue) > 0 {
 			log.Debug("Handling queue")
 			ItemQueue[0].Handler(ItemQueue[0].Client, ItemQueue[0].Message)

@@ -48,6 +48,7 @@ type DimmerConfig struct {
 type BlindConfig struct {
 	CommandTopic        string     `json:"command_topic"`
 	PositionTopic       string     `json:"position_topic"`
+	PositionTemplate    string     `json:"position_template"`
 	SetPositionTopic    string     `json:"set_position_topic"`
 	SetPositionTemplate string     `json:"set_position_template"`
 	PayloadOpen         string     `json:"payload_open"`
@@ -61,6 +62,13 @@ type BlindConfig struct {
 var discovered map[int64]struct{}
 
 func SendConfigObject(msg []byte) {
+
+	if discovered == nil {
+		log.WithFields(log.Fields{
+			"Error": "MQTT not connected",
+		}).Error("SendConfigObject")
+		return
+	}
 
 	if light, err := coap.ParseLightInfo(msg); err == nil {
 		// fmt.Println(light.Name)
@@ -185,11 +193,12 @@ func SendConfigObject(msg []byte) {
 		aConfig := BlindConfig{
 			CommandTopic:        cmdTopic,
 			PositionTopic:       posTopic,
+			PositionTemplate:    "{{ value_json.position }}",
 			SetPositionTopic:    setPosTopic,
 			SetPositionTemplate: "{ \"position\": {{ position }} }",
 			PayloadOpen:         "{ \"position\": 0 }",
 			PayloadClose:        "{ \"position\": 100 }",
-			PayloadStop:         "CLOSE",
+			PayloadStop:         "",
 			UniqueID:            uniqueID,
 			Device:              DeviceInfo{Manufacturer: blind.Manufacturer, Identifiers: idents, Model: blind.Model, Name: blind.Name},
 			Name:                blind.Name,

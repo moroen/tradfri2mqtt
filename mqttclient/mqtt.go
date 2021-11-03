@@ -88,15 +88,13 @@ func Start(wg *sync.WaitGroup, status_channel chan (error)) {
 	opts.OnConnectionLost = connectLostHandler
 
 	_client = mqtt.NewClient(opts)
+	discovered = make(map[int64]struct{})
 
 	if err := connectToBroker(_client); err == nil {
 		go HandleQueue()
 	} else {
 		status_channel <- errors.New("broker not connected, giving up")
 	}
-
-	discovered = make(map[int64]struct{})
-
 }
 
 func Stop() {
