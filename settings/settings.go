@@ -19,7 +19,7 @@ type Config struct {
 		RetryDelay int `json:"retryDelay" yaml:"retrydelay" env:"MESSAGE_RETRY_DELAY" env-default:"10"`
 	} `json:"messages" yaml:"messages"`
 	Mqtt struct {
-		Port string `json:"port" yaml:"port" c`
+		Port string `json:"port" yaml:"port" env:"MQTT_BROKER_PORT" env-default:"1883"`
 		Host string `json:"host" yaml:"host" env:"MQTT_BROKER_HOST" env-default:"localhost"`
 	} `json:"mqtt" yaml:"mqtt"`
 	Tradfri struct {
@@ -57,6 +57,10 @@ func GetConfig(force_reload bool) Config {
 	}
 
 	return _cfg
+}
+
+func (c Config) Save() {
+	WriteConfig(&c)
 }
 
 func WriteConfig(cfg *Config) (err error) {

@@ -1,6 +1,7 @@
 package mqttclient
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -12,10 +13,15 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
+var ErrorBrokerConnectionRefused = errors.New("Bronker Error: Connection refused")
+
 var _client mqtt.Client
 var _status_channel chan (error)
 
 var _wg *sync.WaitGroup
+
+var _ctxMQTT context.Context
+var _mqttStop func()
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	fmt.Printf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
@@ -23,11 +29,11 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 
 var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
 	opts := client.OptionsReader()
-	log.Info(fmt.Sprintf("Connected to broker at %s", opts.Servers()))
+	log.Info(fmt.Sprintf("MQTT: Connected to broker at %s", opts.Servers()))
 }
 
 var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
-	log.Info(fmt.Sprintf("Connect lost: %v", err))
+	log.Info(fmt.Sprintf("MQTT: Connection lost: %v", err))
 	connectToBroker(_client)
 }
 
@@ -37,7 +43,11 @@ func GetMQTTClientConnection() mqtt.Client {
 
 func SendTopic(topic string, payload []byte, retained bool) error {
 	if client := GetMQTTClientConnection(); client != nil {
-		client.Publish(topic, 0, retained, payload)
+		if token := client.Publish(topic, 0, retained, payload); token.Error() != nil {
+			log.Error("Unable to publish to broker")
+			return token.Error()
+		}
+
 	} else {
 		log.WithFields(log.Fields{
 			"topic":   string(topic),
@@ -48,24 +58,13 @@ func SendTopic(topic string, payload []byte, retained bool) error {
 }
 
 func connectToBroker(client mqtt.Client) error {
-	retries := 1
-	waiting := 10
 
-	for retries < 100 {
-		if token := client.Connect(); token.Wait() && token.Error() == nil {
-			Subscribe(client, _status_channel)
-			return nil
-		} else {
-			log.Debug(fmt.Sprintf("Unable to connect to broker. Waiting %d seconds before trying again", waiting))
-			time.Sleep(time.Duration(waiting) * time.Second)
-			retries++
-			if waiting = waiting * retries; waiting > 20 {
-				waiting = 20
-			}
-
-		}
+	if token := client.Connect(); token.Wait() && token.Error() == nil {
+		Subscribe(client, _status_channel)
+		return nil
+	} else {
+		return ErrorBrokerConnectionRefused
 	}
-	return nil
 }
 
 func Start(wg *sync.WaitGroup, status_channel chan (error)) {
@@ -75,6 +74,8 @@ func Start(wg *sync.WaitGroup, status_channel chan (error)) {
 	_wg.Add(1)
 
 	log.Info("MQTT: Starting")
+
+	_ctxMQTT, _mqttStop = context.WithCancel(context.Background())
 
 	conf := settings.GetConfig(false)
 
@@ -90,32 +91,37 @@ func Start(wg *sync.WaitGroup, status_channel chan (error)) {
 	_client = mqtt.NewClient(opts)
 	discovered = make(map[int64]struct{})
 
-	if err := connectToBroker(_client); err == nil {
-		go HandleQueue()
-	} else {
-		status_channel <- errors.New("broker not connected, giving up")
+	ticker := time.NewTicker(5 * time.Second)
+	for {
+		if err := connectToBroker(_client); err == nil {
+
+			return
+		} else {
+			log.Error(fmt.Sprintf("MQTT: Unable to connect to broker at %s:%s", conf.Mqtt.Host, conf.Mqtt.Port))
+		}
+		select {
+		case <-ticker.C:
+			break
+		case <-_ctxMQTT.Done():
+			return
+		}
 	}
+
 }
 
 func Stop() {
-	if _wg != nil {
-		defer _wg.Done()
-	}
+	defer _wg.Done()
+
+	_mqttStop()
 
 	if _client != nil {
-		log.Info("MQTT: Stopping")
+		log.Info("MQTT: Stopping...")
 		_client.Disconnect(250)
 		log.Info("MQTT: Stopped")
-
 	}
 }
 
 func Restart() {
 	Stop()
 	go Start(_wg, _status_channel)
-}
-
-func Do_Test(wg *sync.WaitGroup) {
-	defer wg.Done()
-	wg.Add(1)
 }
