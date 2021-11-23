@@ -65,7 +65,7 @@ func do_serve() {
 
 	var wg sync.WaitGroup
 
-	log.SetLevel(log.InfoLevel)
+	log.SetLevel(log.DebugLevel)
 	// log.SetReportCaller(true)
 	coap.SetCoapRetry(2, 1)
 
