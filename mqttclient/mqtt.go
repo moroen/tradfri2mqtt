@@ -131,7 +131,6 @@ func Start(wg *sync.WaitGroup, status_channel chan (error)) {
 	opts.OnConnectionLost = connectLostHandler
 
 	_client = mqtt.NewClient(opts)
-	discovered = make(map[int64]struct{})
 
 	doConnect()
 

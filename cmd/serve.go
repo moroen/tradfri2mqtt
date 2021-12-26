@@ -16,13 +16,11 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 
-	coap "github.com/moroen/go-tradfricoap"
 	"github.com/moroen/tradfri2mqtt/mqttclient"
 	"github.com/moroen/tradfri2mqtt/settings"
 	"github.com/moroen/tradfri2mqtt/tradfri"
@@ -67,7 +65,7 @@ func do_serve() {
 
 	log.SetLevel(log.DebugLevel)
 	// log.SetReportCaller(true)
-	coap.SetCoapRetry(2, 1)
+	// coap.SetCoapRetry(2, 1)
 
 	var err error
 
@@ -81,7 +79,9 @@ func do_serve() {
 
 	// go mqttclient.Start(&wg, status_channel, 0)
 
-	go tradfri.Start(&wg, status_channel, 0)
+	tradfri.MQTTSendTopic = mqttclient.SendTopic
+
+	go tradfri.Start(&wg, status_channel)
 	// go Interface_Server(conf.Interface.ServerRoot)
 	// go mqttclient.Do_Test(&wg)
 	// time.Sleep(2 * time.Second)
@@ -100,8 +100,8 @@ func do_serve() {
 	for err == nil {
 		select {
 		case <-c:
-			fmt.Println("Sig catched")
-			fmt.Println("Calling stop")
+			log.Debug("Sig catched")
+
 			go tradfri.Stop()
 			go mqttclient.Stop()
 

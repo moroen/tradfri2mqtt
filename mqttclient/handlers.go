@@ -10,7 +10,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	coap "github.com/moroen/go-tradfricoap"
 )
 
 type MQTTpayload struct {
@@ -109,7 +108,6 @@ func ParseMessage(msg mqtt.Message) (deviceid int64, state int, level int, x int
 	message.Color.Y = -1
 
 	if err = json.Unmarshal(msg.Payload(), &message); err == nil {
-		pretty_print(message)
 		s := strings.Split(msg.Topic(), "/")
 
 		deviceid, err = strconv.ParseInt(s[1], 10, 64)
@@ -177,22 +175,24 @@ func Blind(client mqtt.Client, msg mqtt.Message) {
 		"payload": string(msg.Payload()),
 	}).Debug("Received blind message")
 
-	deviceid, _, value, _, _, _, err := ParseMessage(msg)
-	if err != nil {
-		log.Error(err.Error())
-		return
-	}
+	/*
+		deviceid, _, value, _, _, _, err := ParseMessage(msg)
+		if err != nil {
+			log.Error(err.Error())
+			return
+		}
 
-	log.WithFields(log.Fields{
-		"DeviceID": deviceid,
-		"Position": value,
-	}).Debug("Handlers - Blind")
-
-	if _, err := coap.SetBlind(deviceid, value); err != nil {
 		log.WithFields(log.Fields{
-			"Error": err.Error(),
-		}).Error("Handlers - Blind")
-	}
+			"DeviceID": deviceid,
+			"Position": value,
+		}).Debug("Handlers - Blind")
+
+		if _, err := coap.SetBlind(deviceid, value); err != nil {
+			log.WithFields(log.Fields{
+				"Error": err.Error(),
+			}).Error("Handlers - Blind")
+		}
+	*/
 }
 
 func Dimmer(client mqtt.Client, msg mqtt.Message) {
@@ -202,81 +202,83 @@ func Dimmer(client mqtt.Client, msg mqtt.Message) {
 		"topic":   msg.Topic(),
 		"payload": string(msg.Payload()),
 	}).Debug("Received dimmer message")
-
-	deviceid, state, level, x, y, col_temp, err := ParseMessage(msg)
-	if err != nil {
-		log.Error(err.Error())
-		return
-	}
-
-	log.WithFields(log.Fields{
-		"State": state,
-		"Level": level,
-		"X":     x,
-		"Y":     y,
-	}).Debug("MQTT-handlers - Dimmer")
-
-	if state != -1 {
-		if err := coap.SetState(deviceid, state); err != nil {
-			log.WithFields(log.Fields{
-				"Error": err.Error(),
-			}).Error("MQTT-handlers - Dimmer - SetState")
-		}
-	}
-
-	if level != -1 {
-		if err := coap.SetLevel(deviceid, level); err != nil {
-			log.WithFields(log.Fields{
-				"Error": err.Error(),
-			}).Error("MQTT-handlers - Dimmer - SetLevel")
-		}
-	}
-
-	if x != -1 {
-		if err := coap.SetXY(deviceid, x, y); err != nil {
-			log.WithFields(log.Fields{
-				"Error": err.Error(),
-			}).Error("MQTT-handlers - Dimmer - SetXY")
-		}
-	}
-
-	if col_temp != -1 {
-		log.WithFields(log.Fields{
-			"col_temp": col_temp,
-		}).Debug("MQTT-handlers - Dimmer - SetColorTemp")
-		if col_temp >= 350 {
-			coap.SetHexForLevel(deviceid, 30)
-		} else if col_temp < 280 {
-			coap.SetHexForLevel(deviceid, 10)
-		} else {
-			coap.SetHexForLevel(deviceid, 20)
-		}
-	}
-
 	/*
-		if rgb != "" {
-			if err := coap.SetRGB(deviceid, rgb); err != nil {
+		deviceid, state, level, x, y, col_temp, err := ParseMessage(msg)
+		if err != nil {
+			log.Error(err.Error())
+			return
+		}
+
+		log.WithFields(log.Fields{
+			"State": state,
+			"Level": level,
+			"X":     x,
+			"Y":     y,
+		}).Debug("MQTT-handlers - Dimmer")
+
+		if state != -1 {
+			if err := coap.SetState(deviceid, state); err != nil {
 				log.WithFields(log.Fields{
-					"Function": "MQTT-handlers - Dimmer - SetColor",
-					"Error":    err.Error(),
-					"RGB":      rgb,
-				}).Error()
+					"Error": err.Error(),
+				}).Error("MQTT-handlers - Dimmer - SetState")
 			}
 		}
+
+		if level != -1 {
+			if err := coap.SetLevel(deviceid, level); err != nil {
+				log.WithFields(log.Fields{
+					"Error": err.Error(),
+				}).Error("MQTT-handlers - Dimmer - SetLevel")
+			}
+		}
+
+		if x != -1 {
+			if err := coap.SetXY(deviceid, x, y); err != nil {
+				log.WithFields(log.Fields{
+					"Error": err.Error(),
+				}).Error("MQTT-handlers - Dimmer - SetXY")
+			}
+		}
+
+		if col_temp != -1 {
+			log.WithFields(log.Fields{
+				"col_temp": col_temp,
+			}).Debug("MQTT-handlers - Dimmer - SetColorTemp")
+			if col_temp >= 350 {
+				coap.SetHexForLevel(deviceid, 30)
+			} else if col_temp < 280 {
+				coap.SetHexForLevel(deviceid, 10)
+			} else {
+				coap.SetHexForLevel(deviceid, 20)
+			}
+		}
+
+		/*
+			if rgb != "" {
+				if err := coap.SetRGB(deviceid, rgb); err != nil {
+					log.WithFields(log.Fields{
+						"Function": "MQTT-handlers - Dimmer - SetColor",
+						"Error":    err.Error(),
+						"RGB":      rgb,
+					}).Error()
+				}
+			}
 	*/
 
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Error("Dimmer message error")
-	}
+	/*
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err.Error(),
+			}).Error("Dimmer message error")
+		}
+	*/
 
 }
 
 func State(client mqtt.Client, msg mqtt.Message) {
 	// fmt.Printf("Received state message: %s from topic: %s\n", msg.Payload(), msg.Topic())
 
-	state := -1
+	// state := -1
 
 	log.WithFields(log.Fields{
 		"topic":         msg.Topic(),
@@ -284,36 +286,38 @@ func State(client mqtt.Client, msg mqtt.Message) {
 		"payload":       string(msg.Payload()),
 	}).Debug("Received state message")
 
-	if bValue, err := strconv.ParseBool(string(msg.Payload())); err == nil {
-		if bValue {
-			state = 1
-		} else {
-			state = 0
-		}
-	} else {
-		var payload MQTTboolPayload
-		if err := json.Unmarshal(msg.Payload(), &payload); err == nil {
-			if payload.Value == "true" {
+	/*
+		if bValue, err := strconv.ParseBool(string(msg.Payload())); err == nil {
+			if bValue {
 				state = 1
 			} else {
 				state = 0
 			}
+		} else {
+			var payload MQTTboolPayload
+			if err := json.Unmarshal(msg.Payload(), &payload); err == nil {
+				if payload.Value == "true" {
+					state = 1
+				} else {
+					state = 0
+				}
+			}
 		}
-	}
 
-	s := strings.Split(msg.Topic(), "/")
+		s := strings.Split(msg.Topic(), "/")
 
-	deviceid, err := strconv.ParseInt(s[1], 10, 64)
-	if err != nil {
-		log.Fatalln(err.Error())
-	}
+		deviceid, err := strconv.ParseInt(s[1], 10, 64)
+		if err != nil {
+			log.Fatalln(err.Error())
+		}
 
-	err = coap.SetState(deviceid, state)
-	if err != nil {
-		// _status_channel <- fmt.Errorf("Plug failed")
-		AddToQueue(client, msg, State)
-		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Error("Switch message error")
-	}
+		err = coap.SetState(deviceid, state)
+		if err != nil {
+			// _status_channel <- fmt.Errorf("Plug failed")
+			AddToQueue(client, msg, State)
+			log.WithFields(log.Fields{
+				"error": err.Error(),
+			}).Error("Switch message error")
+		}
+	*/
 }

@@ -1,10 +1,10 @@
-package mqttclient
+package tradfri
 
 import (
 	"encoding/json"
 	"fmt"
 
-	coap "github.com/moroen/go-tradfricoap"
+	"github.com/buger/jsonparser"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -59,27 +59,33 @@ type BlindConfig struct {
 	UniqueID            string     `json:"unique_id"`
 }
 
-var discovered map[int64]struct{}
+var _discovered bool
+
+func Discover(force bool) {
+	if force || !_discovered {
+		_connection.GET(_ctx, uriDevices, func(msg []byte, err error) {
+			fmt.Println(string(msg))
+			_, err = jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+				if res, err := jsonparser.GetInt(value); err == nil {
+					uri := fmt.Sprintf("%s/%d", uriDevices, res)
+					_connection.GET(_ctx, uri, func(msg []byte, err error) {
+						SendConfigObject(msg)
+					})
+				} else {
+					fmt.Println(err.Error())
+				}
+			})
+		})
+		_discovered = true
+	}
+}
 
 func SendConfigObject(msg []byte) {
-
-	if discovered == nil {
-		log.WithFields(log.Fields{
-			"Error": "MQTT not connected",
-		}).Error("SendConfigObject")
-		return
-	}
-
-	if light, err := coap.ParseLightInfo(msg); err == nil {
+	if light, err := ParseLightInfo(msg); err == nil {
 		// fmt.Println(light.Name)
 
-		if _, ok := discovered[light.Id]; ok {
-			return
-		}
-		discovered[light.Id] = struct{}{}
-
-		cmdTopic := fmt.Sprintf("tradfri/%d/dimmer/set", light.Id)
-		stTopic := fmt.Sprintf("tradfri/%d/dimmer", light.Id)
+		cmdTopic := fmt.Sprintf("%s/%d/dimmer/set", _mqtt_command_topic, light.Id)
+		stTopic := fmt.Sprintf("%s/%d/dimmer", _mqtt_command_topic, light.Id)
 		uniqueID := fmt.Sprintf("tradfri_%d_light", light.Id)
 		idents := []string{uniqueID}
 
@@ -128,22 +134,18 @@ func SendConfigObject(msg []byte) {
 			log.Fatal(err.Error())
 		}
 
-		topic := fmt.Sprintf("homeassistant/light/%d/config", light.Id)
+		topic := fmt.Sprintf("%s/light/%d/config", _mqtt_discovery_topic, light.Id)
 
 		log.WithFields(log.Fields{
 			"topic":  topic,
 			"config": string(payload),
 		}).Debug("Disovery - Light")
-		SendTopic(topic, payload, true)
+		MQTTSendTopic(topic, payload, true)
 
-	} else if plug, err := coap.ParsePlugInfo(msg); err == nil {
-		if _, ok := discovered[light.Id]; ok {
-			return
-		}
-		discovered[light.Id] = struct{}{}
+	} else if plug, err := ParsePlugInfo(msg); err == nil {
 
-		cmdTopic := fmt.Sprintf("tradfri/%d/switch/set", plug.Id)
-		stdTopic := fmt.Sprintf("tradfri/%d/switch", plug.Id)
+		cmdTopic := fmt.Sprintf("%s/%d/switch/set", _mqtt_command_topic, plug.Id)
+		stdTopic := fmt.Sprintf("%s/%d/switch", _mqtt_command_topic, plug.Id)
 		uniqueID := fmt.Sprintf("tradfri_%d_switch", plug.Id)
 		idents := []string{uniqueID}
 		aConfig := SwitchConfig{
@@ -169,24 +171,20 @@ func SendConfigObject(msg []byte) {
 			log.Fatal(err.Error())
 		}
 
-		topic := fmt.Sprintf("homeassistant/switch/%d/config", plug.Id)
+		topic := fmt.Sprintf("%s/switch/%d/config", _mqtt_discovery_topic, plug.Id)
 
 		log.WithFields(log.Fields{
 			"topic":  topic,
 			"config": string(payload),
 		}).Debug("Disovery - Plug")
 
-		SendTopic(topic, payload, true)
+		MQTTSendTopic(topic, payload, true)
 
-	} else if blind, err := coap.ParseBlindInfo(msg); err == nil {
-		if _, ok := discovered[light.Id]; ok {
-			return
-		}
-		discovered[light.Id] = struct{}{}
+	} else if blind, err := ParseBlindInfo(msg); err == nil {
 
-		cmdTopic := fmt.Sprintf("tradfri/%d/blind/set", blind.Id)
-		posTopic := fmt.Sprintf("tradfri/%d/blind", blind.Id)
-		setPosTopic := fmt.Sprintf("tradfri/%d/blind/set", blind.Id)
+		cmdTopic := fmt.Sprintf("%s/%d/blind/set", _mqtt_command_topic, blind.Id)
+		posTopic := fmt.Sprintf("%s/%d/blind", _mqtt_command_topic, blind.Id)
+		setPosTopic := fmt.Sprintf("%s/%d/blind/set", _mqtt_command_topic, blind.Id)
 		uniqueID := fmt.Sprintf("tradfri_%d_blind", blind.Id)
 		idents := []string{uniqueID}
 
@@ -209,14 +207,14 @@ func SendConfigObject(msg []byte) {
 			log.Fatal(err.Error())
 		}
 
-		topic := fmt.Sprintf("homeassistant/cover/%d/config", blind.Id)
+		topic := fmt.Sprintf("%s/cover/%d/config", _mqtt_discovery_topic, blind.Id)
 
 		log.WithFields(log.Fields{
 			"topic":  topic,
 			"config": string(payload),
 		}).Debug("Disovery - Blind")
 
-		SendTopic(topic, payload, true)
+		MQTTSendTopic(topic, payload, true)
 	}
 }
 
