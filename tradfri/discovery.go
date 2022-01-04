@@ -3,9 +3,11 @@ package tradfri
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/buger/jsonparser"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/net/context"
 )
 
 type SwitchConfig struct {
@@ -63,8 +65,11 @@ var _discovered bool
 
 func Discover(force bool) {
 	if force || !_discovered {
+		_ctx, done := context.WithTimeout(context.Background(), 2*time.Second)
+		defer done()
+
 		_connection.GET(_ctx, uriDevices, func(msg []byte, err error) {
-			fmt.Println(string(msg))
+			// fmt.Println(string(msg))
 			_, err = jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 				if res, err := jsonparser.GetInt(value); err == nil {
 					uri := fmt.Sprintf("%s/%d", uriDevices, res)

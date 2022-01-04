@@ -76,6 +76,7 @@ func ListColorsInMap(colorMap ColorMap) {
 	}
 }
 
+/*
 func SetXY(id int64, x int64, y int64) error {
 	uri := fmt.Sprintf("%s/%d", uriDevices, 65554)
 	payload := fmt.Sprintf("{ \"3311\": [{\"%s\": %d, \"%s\": %d}] }", attrColorX, x, attrColorY, y)
@@ -85,14 +86,15 @@ func SetXY(id int64, x int64, y int64) error {
 		payload: payload,
 	}).Debug()
 
-	/*
+
 		if _, err := PutRequest(uri, payload); err != nil {
 			return err
 		}
-	*/
+
 	return nil
 
 }
+*/
 
 func SetRGB(id int64, rgb string) error {
 	fmt.Printf("Device: %d - RGB: %s\n", id, rgb)
