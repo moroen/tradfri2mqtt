@@ -70,3 +70,19 @@ func SetHex(deviceID int, hex string) {
 	})
 
 }
+
+func SetBlind(deviceID int, position int) {
+
+	_devices.GetDeviceInfo(deviceID, func(device *TradfriDevice, err error) {
+		if uri, payload, err := device.SetBlind(position); err == nil {
+			ctx, done := context.WithTimeout(context.Background(), 2*time.Second)
+			defer done()
+			_connection.PUT(ctx, uri, payload, func(msg []byte, err error) {})
+		} else {
+			log.WithFields(log.Fields{
+				"Error": err.Error(),
+			}).Error("Tradfri - SetBlind")
+		}
+	})
+
+}

@@ -50,7 +50,6 @@ var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
 	opts := client.OptionsReader()
 	log.Info(fmt.Sprintf("MQTT: Connected to broker at %s", opts.Servers()))
 	Subscribe(client, _status_channel)
-	go sendKeepAlive()
 	go HandleMQTTQueue()
 }
 
@@ -91,21 +90,6 @@ func connectToBroker(client mqtt.Client) error {
 		return nil
 	} else {
 		return ErrorBrokerConnectionRefused
-	}
-}
-
-func sendKeepAlive() {
-	ticker := time.NewTicker(5 * time.Second)
-
-	for {
-		select {
-		case <-ticker.C:
-			SendTopic("tradfri/status", []byte("Alive"), false)
-			break
-		case <-_ctxMQTT.Done():
-			SendTopic("tradfri/status", []byte("Stopping"), false)
-			return
-		}
 	}
 }
 

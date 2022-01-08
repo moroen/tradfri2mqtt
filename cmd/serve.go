@@ -24,6 +24,8 @@ import (
 	"github.com/moroen/tradfri2mqtt/mqttclient"
 	"github.com/moroen/tradfri2mqtt/settings"
 	"github.com/moroen/tradfri2mqtt/tradfri"
+	"github.com/moroen/tradfri2mqtt/webinterface"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -73,26 +75,14 @@ func do_serve() {
 
 	status_channel = make(chan error)
 
-	settings.GetConfig(false)
-
-	go mqttclient.Start(&wg, status_channel)
-
-	// go mqttclient.Start(&wg, status_channel, 0)
+	conf := settings.GetConfig(false)
 
 	tradfri.MQTTSendTopic = mqttclient.SendTopic
 
+	go mqttclient.Start(&wg, status_channel)
+
 	go tradfri.Start(&wg, status_channel)
-	// go Interface_Server(conf.Interface.ServerRoot)
-	// go mqttclient.Do_Test(&wg)
-	// time.Sleep(2 * time.Second)
-	//coap.ObserveRestart(true)
-	/*
-		select {
-		case err := <-status_channel:
-			fmt.Println("Error")
-			log.Error(err.Error())
-		}
-	*/
+	go webinterface.Interface_Server(conf.Interface.ServerRoot)
 
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)

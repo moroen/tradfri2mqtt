@@ -211,24 +211,18 @@ func Blind(client mqtt.Client, msg mqtt.Message) {
 		"payload": string(msg.Payload()),
 	}).Debug("Received blind message")
 
-	/*
-		deviceid, _, value, _, _, _, err := ParseMessage(msg)
-		if err != nil {
-			log.Error(err.Error())
-			return
-		}
+	deviceid, _, value, _, _, _, err := ParseMessage(msg)
+	if err != nil {
+		log.Error(err.Error())
+		return
+	}
 
-		log.WithFields(log.Fields{
-			"DeviceID": deviceid,
-			"Position": value,
-		}).Debug("Handlers - Blind")
+	log.WithFields(log.Fields{
+		"DeviceID": deviceid,
+		"Position": value,
+	}).Debug("Handlers - Blind")
 
-		if _, err := coap.SetBlind(deviceid, value); err != nil {
-			log.WithFields(log.Fields{
-				"Error": err.Error(),
-			}).Error("Handlers - Blind")
-		}
-	*/
+	tradfri.SetBlind(int(deviceid), value)
 }
 
 func Dimmer(client mqtt.Client, msg mqtt.Message) {

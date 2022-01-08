@@ -16,6 +16,11 @@ limitations under the License.
 package cmd
 
 import (
+	"os"
+
+	"github.com/moroen/tradfri2mqtt/settings"
+	"github.com/moroen/tradfri2mqtt/tradfri"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -31,24 +36,24 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		// gateway := args[0]
-		// key := args[1]
+		gateway := args[0]
+		key := args[1]
 
-		/*
-			pskpair, err := coap.GetNewPSK(gateway, key)
+		tradfri.GetNewPSK(gateway, key, func(ident string, key string, err error) {
 			if err != nil {
 				log.Error("Unable to create ident")
 			} else {
 				conf := settings.GetConfig(false)
 				conf.Tradfri.Gateway = gateway
-				conf.Tradfri.Identity = pskpair.Ident
-				conf.Tradfri.Passkey = pskpair.Key
+				conf.Tradfri.Identity = ident
+				conf.Tradfri.Passkey = key
 
 				log.Info("New ident created")
 				conf.Save()
 				os.Exit(0)
 			}
-		*/
+		})
+
 	},
 }
 

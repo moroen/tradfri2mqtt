@@ -62,8 +62,9 @@ type TradfriDevice struct {
 }
 
 var ErrorNoStateControl = errors.New("tradfri Error: device has no state control")
-
-var ErrorNoDimmerControl = errors.New("tradfri Error: device has no state control")
+var ErrorNoDimmerControl = errors.New("tradfri Error: device has no dimmer control")
+var ErrorNoBlindControl = errors.New("tradfri Error: device has no blind control")
+var ErrorNoHexControl = errors.New("tradfri Error: device has no hex control")
 
 func (d *TradfriDevice) SetState(state int) (string, string, error) {
 	if d.LightControl != nil {
@@ -103,6 +104,16 @@ func (d *TradfriDevice) SetHex(hex string) (string, string, error) {
 		return uri, payload, nil
 	} else {
 		return "", "", ErrorNoDimmerControl
+	}
+}
+
+func (d *TradfriDevice) SetBlind(position int) (string, string, error) {
+	if d.BlindControl != nil {
+		uri := fmt.Sprintf("%s/%d", uriDevices, d.Id)
+		payload := fmt.Sprintf("{ \"%s\": [{ \"%s\": %d}] }", attrBlindControl, attrBlindPosition, position)
+		return uri, payload, nil
+	} else {
+		return "", "", ErrorNoBlindControl
 	}
 }
 
