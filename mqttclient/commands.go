@@ -2,12 +2,14 @@ package mqttclient
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/moroen/tradfri2mqtt/errors"
+	"github.com/moroen/tradfri2mqtt/settings"
 	"github.com/moroen/tradfri2mqtt/tradfri"
 )
 
@@ -38,11 +40,14 @@ func Command(client mqtt.Client, msg mqtt.Message) {
 		tradfri.Discover(true)
 	case "test":
 		tradfri.Test()
+	case "reboot":
+		tradfri.RebootGateway()
 	default:
 		str := map[string]interface{}{"Unknown command": s[2]}
 
 		if payload, err := json.Marshal(str); err == nil {
-			SendTopic("tradfri/status/error", payload, false)
+			cfg := settings.GetConfig(false)
+			SendTopic(fmt.Sprintf("%s/status/error", cfg.Mqtt.DiscoveryTopic), payload, false)
 		} else {
 			log.WithFields(log.Fields{
 				"Error": err.Error(),

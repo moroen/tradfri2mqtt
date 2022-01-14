@@ -70,7 +70,6 @@ func (d *TradfriDevice) SetState(state int) (string, string, error) {
 	if d.LightControl != nil {
 		return fmt.Sprintf("%s/%d", uriDevices, d.Id), fmt.Sprintf("{ \"%s\": [{ \"%s\": %d }] }", attrLightControl, attrLightState, state), nil
 	} else if d.PlugControl != nil {
-		fmt.Println("PlugControl")
 		return fmt.Sprintf("%s/%d", uriDevices, d.Id), fmt.Sprintf("{ \"%s\": [{ \"%s\": %d }] }", attrPlugControl, attrLightState, state), nil
 	} else {
 		return "", "", ErrorNoStateControl

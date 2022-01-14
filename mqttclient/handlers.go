@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/moroen/tradfri2mqtt/settings"
 	"github.com/moroen/tradfri2mqtt/tradfri"
 	log "github.com/sirupsen/logrus"
 
@@ -59,35 +60,36 @@ func HandleQueue() {
 func Subscribe(client mqtt.Client, status_channel chan (error)) {
 	_status_channel = status_channel
 
+	cfg := settings.GetConfig(false)
+
 	if client == nil {
 		log.Fatal("Unable to subscribe, client is nil")
 		return
 	}
 
-	if token := client.Subscribe("tradfri/+/WS/set", 0, SetHex); token.Wait() && token.Error() != nil {
+	if token := client.Subscribe(fmt.Sprintf("%s/+/WS/set", cfg.Mqtt.CommandTopic), 0, SetHex); token.Wait() && token.Error() != nil {
 		log.Print(token.Error())
 	}
 
-	if token := client.Subscribe("tradfri/+/CWS/set", 0, SetHex); token.Wait() && token.Error() != nil {
+	if token := client.Subscribe(fmt.Sprintf("%s/+/CWS/set", cfg.Mqtt.CommandTopic), 0, SetHex); token.Wait() && token.Error() != nil {
 		log.Print(token.Error())
 	}
 
-	if token := client.Subscribe("tradfri/+/dimmer/set", 0, Dimmer); token.Wait() && token.Error() != nil {
+	if token := client.Subscribe(fmt.Sprintf("%s/+/dimmer/set", cfg.Mqtt.CommandTopic), 0, Dimmer); token.Wait() && token.Error() != nil {
 		log.Print(token.Error())
 	}
 
-	if token := client.Subscribe("tradfri/+/blind/set", 0, Blind); token.Wait() && token.Error() != nil {
+	if token := client.Subscribe(fmt.Sprintf("%s/+/blind/set", cfg.Mqtt.CommandTopic), 0, Blind); token.Wait() && token.Error() != nil {
 		log.Print(token.Error())
 	}
 
-	if token := client.Subscribe("tradfri/+/switch/set", 0, State); token.Wait() && token.Error() != nil {
+	if token := client.Subscribe(fmt.Sprintf("%s/+/switch/set", cfg.Mqtt.CommandTopic), 0, State); token.Wait() && token.Error() != nil {
 		log.Print(token.Error())
 	}
 
-	if token := client.Subscribe("tradfri/cmd/#", 0, Command); token.Wait() && token.Error() != nil {
+	if token := client.Subscribe(fmt.Sprintf("%s/cmd/#", cfg.Mqtt.DiscoveryTopic), 0, Command); token.Wait() && token.Error() != nil {
 		log.Print(token.Error())
 	}
-
 }
 
 type MQTTStateMessage struct {

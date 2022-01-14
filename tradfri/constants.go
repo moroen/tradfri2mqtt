@@ -36,3 +36,7 @@ const attrGroupName = "9001"
 // Plugs
 const attrPlugControl = "3312"
 const attrPlugState = "5850"
+
+// Gateway
+const attrGateway = "15011"
+const attrReboot = "9030"

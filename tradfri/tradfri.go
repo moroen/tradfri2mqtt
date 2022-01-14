@@ -35,6 +35,7 @@ func onConnect() {
 	log.Info(fmt.Sprintf("Tradfri: Connected to gateway at [tcp://%s:%s]", cfg.Tradfri.Gateway, "5684"))
 	MQTTSendTopic("tradfri/status", []byte("Connected"), false)
 	Discover(false)
+	cfg = settings.GetConfig(false)
 	Observe()
 }
 
@@ -60,9 +61,10 @@ func Start(wg *sync.WaitGroup, status_channel chan (error)) {
 		OnDisconnect: func() {
 			log.Info(fmt.Sprintf("Tradfri: Disconnected from gateway at [tcp://%s:%s]", cfg.Tradfri.Gateway, "5684"))
 		},
-		UseQueue: true,
+		UseQueue:  true,
+		KeepAlive: cfg.Tradfri.KeepAlive,
 	}
-	_connection.Connect()
+	go _connection.Connect()
 }
 
 func Stop() {
@@ -124,13 +126,14 @@ func Observe() {
 	_connection.GET(ctx, uriDevices, func(msg []byte, err error) {
 		if _, err = jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			if res, err := jsonparser.GetInt(value); err == nil {
-				go _connection.Observe(_ctxObserve, &_wgObserve, fmt.Sprintf("%s/%d", uriDevices, res), func(msg []byte, err error) {
+				go _connection.Observe(fmt.Sprintf("%s/%d", uriDevices, res), func(msg []byte, err error) {
+					// go _connection.Observe(_ctxObserve, &_wgObserve, fmt.Sprintf("%s/%d", uriDevices, res), func(msg []byte, err error) {
 					if err != nil {
 						log.Error("Test - Observe failed")
 					} else {
 						SendState(msg)
 					}
-				}, 0)
+				})
 			}
 		}); err != nil {
 			log.WithFields(log.Fields{
