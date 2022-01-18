@@ -15,11 +15,14 @@ limitations under the License.
 */
 package main
 
-import "github.com/moroen/tradfri2mqtt/cmd"
+import (
+	"github.com/moroen/tradfri2mqtt/cmd"
+)
 
 func main() {
 	// Define the default sub command 'defCmd' here. If user doesn't submit
 	// using a default command, we'll use what is here.
+
 	defCmd := "serve"
 	cmd.Execute(defCmd)
 }

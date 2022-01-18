@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -37,16 +38,24 @@ type Config struct {
 var _cfg Config
 var configDirs configdir.ConfigDir
 
-func GetConfig(force_reload bool) Config {
-	if _cfg != (Config{}) && !force_reload {
-		return _cfg
-	}
-
+func GetConfigFile() (string, error) {
 	configDirs = configdir.New("", "tradfri2mqtt")
 	configDirs.LocalPath, _ = filepath.Abs("/config")
 
 	if folder := configDirs.QueryFolderContainsFile(("tradfri2mqtt.yml")); folder != nil {
 		file := fmt.Sprintf("%s/%s", folder.Path, "tradfri2mqtt.yml")
+		return file, nil
+	} else {
+		return "", errors.New("config file not found")
+	}
+}
+
+func GetConfig(force_reload bool) Config {
+	if _cfg != (Config{}) && !force_reload {
+		return _cfg
+	}
+
+	if file, err := GetConfigFile(); err == nil {
 		log.WithFields(log.Fields{
 			"File": file,
 		}).Debug("Loading config")

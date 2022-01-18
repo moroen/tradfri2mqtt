@@ -39,6 +39,10 @@ func onConnect() {
 	Observe()
 }
 
+func SetConnecion(conn coap.CoapDTLSConnection) {
+	_connection = conn
+}
+
 func Start(wg *sync.WaitGroup, status_channel chan (error)) {
 	log.Info("Tradfri: Starting")
 	_wg = wg

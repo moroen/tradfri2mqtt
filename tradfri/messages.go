@@ -113,7 +113,7 @@ func SendState(msg []byte) error {
 		log.WithFields(log.Fields{
 			"Coap message": string(msg),
 			"Error":        err.Error(),
-		}).Info()
+		}).Debug("Tradfri - SendState")
 
 		return err
 	}

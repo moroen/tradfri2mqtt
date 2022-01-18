@@ -19,9 +19,8 @@ import (
 	"fmt"
 	"os"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-
-	"github.com/spf13/viper"
 )
 
 var cfgFile string
@@ -44,21 +43,30 @@ to quickly create a Cobra application.`,
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute(defCmd string) {
-	var cmdFound bool
-	cmd := rootCmd.Commands()
+	/*
+		var cmdFound bool
+		cmd := rootCmd.Commands()
 
-	for _, a := range cmd {
-		for _, b := range os.Args[1:] {
-			if a.Name() == b {
-				cmdFound = true
-				break
+		for _, a := range cmd {
+			for _, b := range os.Args[1:] {
+				if a.Name() == b {
+					cmdFound = true
+					break
+				}
 			}
 		}
-	}
-	if cmdFound == false {
+
+			if cmdFound == false {
+				args := append([]string{defCmd}, os.Args[1:]...)
+				rootCmd.SetArgs(args)
+			}
+	*/
+
+	if len(os.Args) == 1 {
 		args := append([]string{defCmd}, os.Args[1:]...)
 		rootCmd.SetArgs(args)
 	}
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -66,7 +74,7 @@ func Execute(defCmd string) {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
+	cobra.OnInitialize(SetOptions)
 
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
@@ -76,10 +84,23 @@ func init() {
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
+	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Show debug messages")
+}
+
+func SetOptions() {
+	if verbose, err := rootCmd.Flags().GetBool("verbose"); err == nil {
+		if verbose {
+			log.SetLevel(log.DebugLevel)
+		} else {
+			log.SetLevel(log.InfoLevel)
+		}
+	}
 }
 
 // initConfig reads in config file and ENV variables if set.
+/*
 func initConfig() {
 	if cfgFile != "" {
 		// Use config file from the flag.
@@ -102,3 +123,4 @@ func initConfig() {
 		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
 	}
 }
+*/
