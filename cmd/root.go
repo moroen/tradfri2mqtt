@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/moroen/tradfri2mqtt/settings"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -80,7 +81,8 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.tradfri2mqtt.yaml)")
+	file, _ := settings.GetConfigFile()
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf("config file (default is %s)", file))
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.

@@ -25,10 +25,11 @@ type Config struct {
 		CommandTopic   string `json:"commandtopic" yaml:"commandtopic" env:"MQTT_COMMAND_TOPIC" env-default:"tradfri"`
 	} `json:"mqtt" yaml:"mqtt"`
 	Tradfri struct {
-		Gateway   string `json:"gateway" yaml:"gateway"`
-		Identity  string `json:"ident" yaml:"ident"`
-		Passkey   string `json:"key" yaml:"key"`
-		KeepAlive int    `json:"keepAlive" yaml:"keepalive" env-default:"0"`
+		Gateway         string `json:"gateway" yaml:"gateway"`
+		Identity        string `json:"ident" yaml:"ident"`
+		Passkey         string `json:"key" yaml:"key"`
+		KeepAlive       int    `json:"keepAlive" yaml:"keepalive" env-default:"0"`
+		DisconnectTimer int    `json:"disconnectTimer" yaml:"disconnecttimer" env-default:"0"`
 	} `json:"tradfri" yaml:"tradfri"`
 	Interface struct {
 		ServerRoot string `json:"gateway" yaml:"gateway" env:"MQTT_INTERFACE_ROOT" env-default:"./www"`
@@ -37,8 +38,12 @@ type Config struct {
 
 var _cfg Config
 var configDirs configdir.ConfigDir
+var _cfgFile string
 
 func GetConfigFile() (string, error) {
+	if _cfgFile != "" {
+		return _cfgFile, nil
+	}
 	configDirs = configdir.New("", "tradfri2mqtt")
 	configDirs.LocalPath, _ = filepath.Abs("/config")
 

@@ -65,8 +65,9 @@ func Start(wg *sync.WaitGroup, status_channel chan (error)) {
 		OnDisconnect: func() {
 			log.Info(fmt.Sprintf("Tradfri: Disconnected from gateway at [tcp://%s:%s]", cfg.Tradfri.Gateway, "5684"))
 		},
-		UseQueue:  true,
-		KeepAlive: cfg.Tradfri.KeepAlive,
+		UseQueue:        true,
+		KeepAlive:       cfg.Tradfri.KeepAlive,
+		DisconnectTimer: cfg.Tradfri.DisconnectTimer,
 	}
 	go _connection.Connect()
 }
