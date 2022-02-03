@@ -17,11 +17,14 @@ package main
 
 import (
 	"github.com/moroen/tradfri2mqtt/cmd"
+	"github.com/moroen/tradfri2mqtt/settings"
 )
 
 func main() {
 	// Define the default sub command 'defCmd' here. If user doesn't submit
 	// using a default command, we'll use what is here.
+
+	settings.Init()
 
 	defCmd := "serve"
 	cmd.Execute(defCmd)

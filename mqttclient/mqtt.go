@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/moroen/tradfri2mqtt/settings"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
@@ -103,10 +103,8 @@ func Start(wg *sync.WaitGroup, status_channel chan (error)) {
 
 	_ctxMQTT, _mqttStop = context.WithCancel(context.Background())
 
-	conf := settings.GetConfig(false)
-
-	var broker = conf.Mqtt.Host
-	var port = conf.Mqtt.Port
+	var broker = viper.GetString("mqtt.host")
+	var port = viper.GetString("mqtt.port")
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(fmt.Sprintf("tcp://%s:%s", broker, port))
 	opts.SetClientID("go_mqtt_client")
@@ -122,13 +120,12 @@ func Start(wg *sync.WaitGroup, status_channel chan (error)) {
 
 func doConnect() {
 	ticker := time.NewTicker(5 * time.Second)
-	conf := settings.GetConfig(false)
 	for {
 		if err := connectToBroker(_client); err == nil {
 
 			return
 		} else {
-			log.Error(fmt.Sprintf("MQTT: Unable to connect to broker at %s:%s", conf.Mqtt.Host, conf.Mqtt.Port))
+			log.Error(fmt.Sprintf("MQTT: Unable to connect to broker at %s:%s", viper.GetString("mqtt.host"), viper.GetString("mqtt.port")))
 		}
 		select {
 		case <-ticker.C:
@@ -140,11 +137,13 @@ func doConnect() {
 }
 
 func Stop() {
-	defer _wg.Done()
 
 	isStopping = true
 
-	_mqttStop()
+	if _mqttStop != nil {
+		defer _wg.Done()
+		_mqttStop()
+	}
 
 	if _client != nil {
 		log.Info("MQTT: Stopping...")

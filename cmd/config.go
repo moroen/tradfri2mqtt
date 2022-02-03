@@ -18,10 +18,10 @@ package cmd
 import (
 	"os"
 
-	"github.com/moroen/tradfri2mqtt/settings"
 	"github.com/moroen/tradfri2mqtt/tradfri"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // configCmd represents the config command
@@ -43,13 +43,12 @@ to quickly create a Cobra application.`,
 			if err != nil {
 				log.Error("Unable to create ident")
 			} else {
-				conf := settings.GetConfig(false)
-				conf.Tradfri.Gateway = gateway
-				conf.Tradfri.Identity = ident
-				conf.Tradfri.Passkey = key
 
+				viper.Set("tradfri.gateway", gateway)
+				viper.Set("tradfri.identity", ident)
+				viper.Set("tradfri.passkey", key)
 				log.Info("New ident created")
-				conf.Save()
+				viper.WriteConfig()
 				os.Exit(0)
 			}
 		})

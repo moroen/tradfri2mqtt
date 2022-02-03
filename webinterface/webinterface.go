@@ -5,11 +5,13 @@ import (
 
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
-	"github.com/moroen/tradfri2mqtt/settings"
+	"github.com/moroen/tradfri2mqtt/tradfri"
 	"github.com/sirupsen/logrus"
 )
 
 var logger = logrus.New()
+
+var status_channel chan (error)
 
 var logLevelMap = map[string]logrus.Level{
 	"trace": logrus.TraceLevel,
@@ -18,6 +20,8 @@ var logLevelMap = map[string]logrus.Level{
 	"warn":  logrus.WarnLevel,
 	"error": logrus.ErrorLevel,
 }
+
+var r *gin.Engine
 
 type arguments struct {
 	LogLevel       string
@@ -32,8 +36,8 @@ type TradfriFields struct {
 }
 
 type TradfriPSk struct {
-	Ident string `json:"ident"`
-	Key   string `json:"key"`
+	Identity string `json:"identity"`
+	Passkey  string `json:"passkey"`
 }
 
 func CORS() gin.HandlerFunc {
@@ -54,15 +58,16 @@ func CORS() gin.HandlerFunc {
 
 var _server_root string
 
-func Interface_Server(server_root string) {
+func Interface_Server(server_root string, status_channel chan (error)) {
 
+	status_channel = status_channel
 	_server_root = server_root
 	fmt.Print(server_root)
 
 	logger.SetLevel(logrus.DebugLevel)
 	logger.SetFormatter(&logrus.JSONFormatter{})
 
-	r := gin.Default()
+	r = gin.Default()
 	r.Use(CORS())
 
 	r.Use(static.Serve("/", static.LocalFile(_server_root, false)))
@@ -72,31 +77,43 @@ func Interface_Server(server_root string) {
 	})
 
 	r.GET("/api/settings", func(c *gin.Context) {
-		conf := settings.GetConfig(false)
+		// conf := settings.GetConfig(false)
 
-		c.JSON(200, conf)
+		c.JSON(200, "")
 	})
 
 	r.POST("/api/settings", func(c *gin.Context) {
-		var conf settings.Config
+		// conf := settings.GetConfig(false)
 
-		if err := c.ShouldBind(&conf); err == nil {
-			fmt.Println(conf)
-			ret := conf
-			c.JSON(200, ret)
-		} else {
-			c.JSON(400, err.Error())
-		}
+		fmt.Println(c.Request.Body)
+
+		/*
+			if err := c.ShouldBind(&conf); err == nil {
+				ret := conf
+				ret.Save()
+				c.JSON(200, ret)
+				err := settings.ErrConfigIsDirty
+				status_channel <- err
+			} else {
+				c.JSON(400, err.Error())
+			}
+		*/
 	})
 
 	r.POST("/api/getPSK", func(c *gin.Context) {
-		conf := settings.GetConfig(false)
 		var data TradfriFields
 
 		if err := c.ShouldBind(&data); err == nil {
-			fmt.Println(data)
-			ret := TradfriPSk{Ident: conf.Tradfri.Identity, Key: conf.Tradfri.Passkey}
-			c.JSON(200, ret)
+
+			tradfri.GetNewPSK(data.Gateway, data.Key, func(ident string, key string, err error) {
+				if err == nil {
+					ret := TradfriPSk{Identity: ident, Passkey: key}
+					c.JSON(200, ret)
+				} else {
+					c.JSON(400, err.Error())
+				}
+			})
+
 		} else {
 			c.JSON(400, err.Error())
 		}

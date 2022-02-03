@@ -4,14 +4,64 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
+	"strings"
 
+	"github.com/kirsle/configdir"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/ilyakaznacheev/cleanenv"
-	"github.com/shibukawa/configdir"
-	yaml "gopkg.in/yaml.v2"
+	"github.com/spf13/viper"
 )
+
+var ErrConfigIsDirty = errors.New("config is dirty")
+
+func Init() {
+
+	if _, err := os.Stat("/config"); os.IsNotExist(err) {
+		viper.AddConfigPath(configdir.LocalConfig("tradfri2mqtt"))
+	} else {
+		viper.AddConfigPath("/config")
+	}
+
+	viper.SetConfigName("tradfri2mqtt")
+	viper.SetConfigType("yaml")
+
+	// Env
+	viper.SetEnvPrefix("tradfri2mqtt")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			log.Debug("Setting - Config file not found. Creating default")
+
+			viper.SetDefault("mqtt.enable", true)
+			viper.SetDefault("mqtt.port", "1883")
+			viper.SetDefault("mqtt.host", "127.0.0.1")
+			viper.SetDefault("mqtt.discoverytopic", "homeassistant")
+			viper.SetDefault("mqtt.commandtopic", "tradfri")
+
+			viper.SetDefault("messages.retrylimit", 5)
+			viper.SetDefault("messages.retrydelay", 10)
+
+			viper.SetDefault("tradfri.enable", true)
+			viper.SetDefault("tradfri.gateway", "127.0.0.1")
+			viper.SetDefault("tradfri.identity", "")
+			viper.SetDefault("tradfri.passkey", "")
+			viper.SetDefault("tradfri.keepalive", 0)
+			viper.SetDefault("tradfri.disconnecttimer", 0)
+
+			viper.SetDefault("interface.enable", true)
+			viper.SetDefault("interface.serverroot", "./www")
+
+			if err := viper.SafeWriteConfig(); err != nil {
+				fmt.Println(err.Error())
+			}
+		} else {
+			fmt.Println("Other error")
+			// Config file was found but another error was produced
+		}
+	} else {
+		viper.AutomaticEnv()
+	}
+}
 
 type Config struct {
 	Messages struct {
@@ -19,23 +69,27 @@ type Config struct {
 		RetryDelay int `json:"retryDelay" yaml:"retrydelay" env:"MESSAGE_RETRY_DELAY" env-default:"10"`
 	} `json:"messages" yaml:"messages"`
 	Mqtt struct {
+		Enable         bool   `json:"enable" yaml:"enable" env:"MQTT_ENABLE" env-default:"true"`
 		Port           string `json:"port" yaml:"port" env:"MQTT_BROKER_PORT" env-default:"1883"`
 		Host           string `json:"host" yaml:"host" env:"MQTT_BROKER_HOST" env-default:"localhost"`
 		DiscoveryTopic string `json:"discoverytopic" yaml:"discoverytopic" env:"MQTT_DISCOVERY_TOPIC" env-default:"homeassistant"`
 		CommandTopic   string `json:"commandtopic" yaml:"commandtopic" env:"MQTT_COMMAND_TOPIC" env-default:"tradfri"`
 	} `json:"mqtt" yaml:"mqtt"`
 	Tradfri struct {
+		Enable          bool   `json:"enable" yaml:"enable" env:"TRADFRI_ENABLE" env-default:"true"`
 		Gateway         string `json:"gateway" yaml:"gateway"`
 		Identity        string `json:"ident" yaml:"ident"`
 		Passkey         string `json:"key" yaml:"key"`
-		KeepAlive       int    `json:"keepAlive" yaml:"keepalive" env-default:"0"`
-		DisconnectTimer int    `json:"disconnectTimer" yaml:"disconnecttimer" env-default:"0"`
+		KeepAlive       int    `json:"keepalive" yaml:"keepalive" env-default:"0"`
+		DisconnectTimer int    `json:"disconnecttimer" yaml:"disconnecttimer" env-default:"0"`
 	} `json:"tradfri" yaml:"tradfri"`
 	Interface struct {
+		Enable     bool   `json:"enable" yaml:"enable" env:"WWW_ENABLE" env-default:"true"`
 		ServerRoot string `json:"gateway" yaml:"gateway" env:"MQTT_INTERFACE_ROOT" env-default:"./www"`
 	} `json:"interface" yaml:"interface"`
 }
 
+/*
 var _cfg Config
 var configDirs configdir.ConfigDir
 var _cfgFile string
@@ -104,3 +158,4 @@ func WriteConfig(cfg *Config) (err error) {
 
 	return err
 }
+*/

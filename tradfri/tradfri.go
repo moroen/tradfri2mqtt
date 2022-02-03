@@ -9,8 +9,8 @@ import (
 
 	"github.com/buger/jsonparser"
 	coap "github.com/moroen/gocoap/v5"
-	"github.com/moroen/tradfri2mqtt/settings"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 var ErrorTradfriConnectionRefused = errors.New("Tradfri Error: Connection refused")
@@ -22,7 +22,7 @@ var _wgObserve sync.WaitGroup
 var _ctxObserve context.Context
 var _stopObserve func()
 
-var cfg settings.Config
+// var cfg settings.Config
 
 var MQTTSendTopic func(string, []byte, bool) error
 
@@ -31,11 +31,22 @@ var _connection coap.CoapDTLSConnection
 var _mqtt_command_topic string
 var _mqtt_discovery_topic string
 
+func _MQTTSendTopic_notConnected(topic string, msg []byte, retained bool) error {
+	log.WithFields(log.Fields{
+		"Topic":   topic,
+		"Payload": string(msg),
+	}).Debug("MQTT not connected")
+	return errors.New("MQTT not connected")
+}
 func onConnect() {
-	log.Info(fmt.Sprintf("Tradfri: Connected to gateway at [tcp://%s:%s]", cfg.Tradfri.Gateway, "5684"))
-	MQTTSendTopic("tradfri/status", []byte("Connected"), false)
+	log.Info(fmt.Sprintf("Tradfri: Connected to gateway at [tcp://%s:%s]", viper.GetString("tradfri.gateway"), "5684"))
+	if MQTTSendTopic != nil {
+		MQTTSendTopic("tradfri/status", []byte("Connected"), false)
+	} else {
+		MQTTSendTopic = _MQTTSendTopic_notConnected
+		MQTTSendTopic("tradfri/status", []byte("Connected"), false)
+	}
 	Discover(false)
-	cfg = settings.GetConfig(false)
 	Observe()
 }
 
@@ -49,25 +60,25 @@ func Start(wg *sync.WaitGroup, status_channel chan (error)) {
 	wg.Add(1)
 	_devices.Init()
 
-	cfg = settings.GetConfig(false)
-	_mqtt_command_topic = cfg.Mqtt.CommandTopic
-	_mqtt_discovery_topic = cfg.Mqtt.DiscoveryTopic
+	_mqtt_command_topic = viper.GetString("mqtt.commandtopic")
+	_mqtt_discovery_topic = viper.GetString("mqtt.discoverytopic")
 
 	_connection = coap.CoapDTLSConnection{
-		Host:      cfg.Tradfri.Gateway,
-		Port:      5684,
-		Ident:     cfg.Tradfri.Identity,
-		Key:       cfg.Tradfri.Passkey,
-		OnConnect: onConnect,
+		Host:         viper.GetString("tradfri.gateway"),
+		Port:         5684,
+		Ident:        viper.GetString("tradfri.identity"),
+		Key:          viper.GetString("tradfri.passkey"),
+		RetryConnect: true,
+		OnConnect:    onConnect,
 		OnConnectionFailed: func() {
-			log.Info(fmt.Sprintf("Tradfri: Unable to connected to gateway at [tcp://%s:%s]", cfg.Tradfri.Gateway, "5684"))
+			log.Info(fmt.Sprintf("Tradfri: Unable to connected to gateway at [tcp://%s:%s]", viper.GetString("tradfri.gateway"), "5684"))
 		},
 		OnDisconnect: func() {
-			log.Info(fmt.Sprintf("Tradfri: Disconnected from gateway at [tcp://%s:%s]", cfg.Tradfri.Gateway, "5684"))
+			log.Info(fmt.Sprintf("Tradfri: Disconnected from gateway at [tcp://%s:%s]", viper.GetString("tradfri.gateway"), "5684"))
 		},
 		UseQueue:        true,
-		KeepAlive:       cfg.Tradfri.KeepAlive,
-		DisconnectTimer: cfg.Tradfri.DisconnectTimer,
+		KeepAlive:       viper.GetInt("tradfri.keepalive"),
+		DisconnectTimer: viper.GetInt("tradfri.disconnecttimer"),
 	}
 	go _connection.Connect()
 }

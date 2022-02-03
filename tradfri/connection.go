@@ -10,6 +10,7 @@ import (
 	"github.com/gofrs/uuid"
 	coap "github.com/moroen/gocoap/v5"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 type GatewayConfig struct {
@@ -80,7 +81,7 @@ func GetNewPSK(gateway string, key string, handler func(ident string, key string
 	}
 
 	coapDTLSConnection.OnConnectionFailed = func() {
-		log.Info(fmt.Sprintf("Tradfri: Unable to connected to gateway at [tcp://%s:%s]", cfg.Tradfri.Gateway, "5684"))
+		log.Info(fmt.Sprintf("Tradfri - GeneratePSK: Unable to connected to gateway at [tcp://%s:%s]", viper.GetString("tradfri.gateway"), "5684"))
 	}
 
 	coapDTLSConnection.Connect()

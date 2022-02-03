@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/moroen/tradfri2mqtt/errors"
-	"github.com/moroen/tradfri2mqtt/settings"
 	"github.com/moroen/tradfri2mqtt/tradfri"
 )
 
@@ -46,8 +46,7 @@ func Command(client mqtt.Client, msg mqtt.Message) {
 		str := map[string]interface{}{"Unknown command": s[2]}
 
 		if payload, err := json.Marshal(str); err == nil {
-			cfg := settings.GetConfig(false)
-			SendTopic(fmt.Sprintf("%s/status/error", cfg.Mqtt.DiscoveryTopic), payload, false)
+			SendTopic(fmt.Sprintf("%s/status/error", viper.GetString("mqtt.discoverytopic")), payload, false)
 		} else {
 			log.WithFields(log.Fields{
 				"Error": err.Error(),

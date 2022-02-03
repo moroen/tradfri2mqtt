@@ -6,10 +6,10 @@ package cmd
 
 import (
 	coap "github.com/moroen/gocoap/v5"
-	"github.com/moroen/tradfri2mqtt/settings"
 	"github.com/moroen/tradfri2mqtt/tradfri"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // rebootCmd represents the reboot command
@@ -23,15 +23,12 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// tradfri.
-		//	tradfri.RebootGateway()
 
-		conf := settings.GetConfig(false)
 		connection := coap.CoapDTLSConnection{}
-		connection.Host = conf.Tradfri.Gateway
+		connection.Host = viper.GetString("tradfri.gateway")
 		connection.Port = 5684
-		connection.Ident = conf.Tradfri.Identity
-		connection.Key = conf.Tradfri.Passkey
+		connection.Ident = viper.GetString("tradfri.identity")
+		connection.Key = viper.GetString("tradfri.passkey")
 		connection.OnConnect = func() {
 			tradfri.SetConnecion(connection)
 			tradfri.RebootGateway()

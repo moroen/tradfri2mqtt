@@ -28,6 +28,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // serveCmd represents the serve command
@@ -70,23 +71,30 @@ func do_serve() {
 
 	var err error
 
-	// latest_restart := time.Now()
-
 	status_channel = make(chan error)
-
-	conf := settings.GetConfig(false)
-
-	tradfri.MQTTSendTopic = mqttclient.SendTopic
-
-	go mqttclient.Start(&wg, status_channel)
-
-	go tradfri.Start(&wg, status_channel)
-	go webinterface.Interface_Server(conf.Interface.ServerRoot)
 
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
+	if viper.GetBool("interface.enable") {
+		go webinterface.Interface_Server(viper.GetString("interface.serverroot"), status_channel)
+	}
+
 	for err == nil {
+
+		if viper.GetBool("mqtt.enable") {
+			tradfri.MQTTSendTopic = mqttclient.SendTopic
+			go mqttclient.Start(&wg, status_channel)
+		} else {
+			log.Info("MQTT - Disabled by config")
+		}
+
+		if viper.GetBool("tradfri.enable") {
+			go tradfri.Start(&wg, status_channel)
+		} else {
+			log.Info("Tradfri - Disabled by config")
+		}
+
 		select {
 		case <-c:
 			log.Debug("Sig catched")
@@ -98,6 +106,12 @@ func do_serve() {
 
 			os.Exit(1)
 		case err = <-status_channel:
+			if err == settings.ErrConfigIsDirty {
+				log.Info("Config has changed, restarting")
+				go tradfri.Stop()
+				go mqttclient.Stop()
+				wg.Wait()
+			}
 			err = nil
 		}
 	}
