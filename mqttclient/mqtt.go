@@ -25,6 +25,8 @@ var _mqttStop func()
 
 var isStopping bool
 
+var _is_started bool
+
 type MQTTQueueItem struct {
 	Topic    string
 	Payload  []byte
@@ -114,8 +116,8 @@ func Start(wg *sync.WaitGroup, status_channel chan (error)) {
 
 	_client = mqtt.NewClient(opts)
 
+	_is_started = true
 	doConnect()
-
 }
 
 func doConnect() {
@@ -137,18 +139,19 @@ func doConnect() {
 }
 
 func Stop() {
+	if _is_started {
+		isStopping = true
 
-	isStopping = true
+		if _mqttStop != nil {
+			defer _wg.Done()
+			_mqttStop()
+		}
 
-	if _mqttStop != nil {
-		defer _wg.Done()
-		_mqttStop()
-	}
-
-	if _client != nil {
-		log.Info("MQTT: Stopping...")
-		_client.Disconnect(250)
-		log.Info("MQTT: Stopped")
+		if _client != nil {
+			log.Info("MQTT: Stopping...")
+			_client.Disconnect(250)
+			log.Info("MQTT: Stopped")
+		}
 	}
 }
 

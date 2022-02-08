@@ -3,7 +3,6 @@ package settings
 import (
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/kirsle/configdir"
@@ -14,13 +13,15 @@ import (
 var ErrConfigIsDirty = errors.New("config is dirty")
 
 func Init() {
+	configpath := viper.GetString("config-path")
 
-	if _, err := os.Stat("/config"); os.IsNotExist(err) {
+	if configpath == "" {
 		viper.AddConfigPath(configdir.LocalConfig("tradfri2mqtt"))
 	} else {
-		viper.AddConfigPath("/config")
+		viper.AddConfigPath(configpath)
 	}
 
+	// File
 	viper.SetConfigName("tradfri2mqtt")
 	viper.SetConfigType("yaml")
 
@@ -28,28 +29,29 @@ func Init() {
 	viper.SetEnvPrefix("tradfri2mqtt")
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
+	viper.SetDefault("mqtt.enable", true)
+	viper.SetDefault("mqtt.port", 1883)
+	viper.SetDefault("mqtt.host", "127.0.0.1")
+	viper.SetDefault("mqtt.discoverytopic", "homeassistant")
+	viper.SetDefault("mqtt.commandtopic", "tradfri")
+
+	viper.SetDefault("messages.retrylimit", 5)
+	viper.SetDefault("messages.retrydelay", 10)
+
+	viper.SetDefault("tradfri.enable", true)
+	viper.SetDefault("tradfri.gateway", "127.0.0.1")
+	viper.SetDefault("tradfri.identity", "")
+	viper.SetDefault("tradfri.passkey", "")
+	viper.SetDefault("tradfri.keepalive", 0)
+	viper.SetDefault("tradfri.disconnecttimer", 0)
+
+	viper.SetDefault("interface.enable", true)
+	viper.SetDefault("interface.root", "./www")
+	viper.SetDefault("interface.port", 8321)
+
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			log.Debug("Setting - Config file not found. Creating default")
-
-			viper.SetDefault("mqtt.enable", true)
-			viper.SetDefault("mqtt.port", "1883")
-			viper.SetDefault("mqtt.host", "127.0.0.1")
-			viper.SetDefault("mqtt.discoverytopic", "homeassistant")
-			viper.SetDefault("mqtt.commandtopic", "tradfri")
-
-			viper.SetDefault("messages.retrylimit", 5)
-			viper.SetDefault("messages.retrydelay", 10)
-
-			viper.SetDefault("tradfri.enable", true)
-			viper.SetDefault("tradfri.gateway", "127.0.0.1")
-			viper.SetDefault("tradfri.identity", "")
-			viper.SetDefault("tradfri.passkey", "")
-			viper.SetDefault("tradfri.keepalive", 0)
-			viper.SetDefault("tradfri.disconnecttimer", 0)
-
-			viper.SetDefault("interface.enable", true)
-			viper.SetDefault("interface.serverroot", "./www")
 
 			if err := viper.SafeWriteConfig(); err != nil {
 				fmt.Println(err.Error())
@@ -70,14 +72,14 @@ type Config struct {
 	} `json:"messages" yaml:"messages"`
 	Mqtt struct {
 		Enable         bool   `json:"enable" yaml:"enable" env:"MQTT_ENABLE" env-default:"true"`
-		Port           string `json:"port" yaml:"port" env:"MQTT_BROKER_PORT" env-default:"1883"`
+		Port           int    `json:"port" yaml:"port" env:"MQTT_BROKER_PORT" env-default:"1883"`
 		Host           string `json:"host" yaml:"host" env:"MQTT_BROKER_HOST" env-default:"localhost"`
 		DiscoveryTopic string `json:"discoverytopic" yaml:"discoverytopic" env:"MQTT_DISCOVERY_TOPIC" env-default:"homeassistant"`
 		CommandTopic   string `json:"commandtopic" yaml:"commandtopic" env:"MQTT_COMMAND_TOPIC" env-default:"tradfri"`
 	} `json:"mqtt" yaml:"mqtt"`
 	Tradfri struct {
 		Enable          bool   `json:"enable" yaml:"enable" env:"TRADFRI_ENABLE" env-default:"true"`
-		Gateway         string `json:"gateway" yaml:"gateway"`
+		Gateway         string `json:"gateway" yaml:"gateway" mapstructure:"gateway"`
 		Identity        string `json:"ident" yaml:"ident"`
 		Passkey         string `json:"key" yaml:"key"`
 		KeepAlive       int    `json:"keepalive" yaml:"keepalive" env-default:"0"`

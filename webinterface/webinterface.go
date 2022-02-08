@@ -1,12 +1,16 @@
 package webinterface
 
 import (
+	"bytes"
 	"fmt"
 
+	"github.com/ghodss/yaml"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
+	"github.com/moroen/tradfri2mqtt/settings"
 	"github.com/moroen/tradfri2mqtt/tradfri"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 var logger = logrus.New()
@@ -23,11 +27,9 @@ var logLevelMap = map[string]logrus.Level{
 
 var r *gin.Engine
 
-type arguments struct {
-	LogLevel       string
-	BindAddress    string
-	BindPort       int
-	StaticContents string
+type PostResponse struct {
+	Status string
+	Error  string
 }
 
 type TradfriFields struct {
@@ -79,25 +81,55 @@ func Interface_Server(server_root string, status_channel chan (error)) {
 	r.GET("/api/settings", func(c *gin.Context) {
 		// conf := settings.GetConfig(false)
 
-		c.JSON(200, "")
+		conf := viper.AllSettings()
+
+		c.JSON(200, conf)
 	})
 
 	r.POST("/api/settings", func(c *gin.Context) {
 		// conf := settings.GetConfig(false)
 
-		fmt.Println(c.Request.Body)
-
 		/*
-			if err := c.ShouldBind(&conf); err == nil {
-				ret := conf
-				ret.Save()
-				c.JSON(200, ret)
-				err := settings.ErrConfigIsDirty
-				status_channel <- err
+			if jsonData, err := ioutil.ReadAll(c.Request.Body); err == nil {
+				fmt.Println(string(jsonData))
 			} else {
-				c.JSON(400, err.Error())
+				fmt.Println(err.Error())
 			}
 		*/
+
+		var conf settings.Config
+
+		if err := viper.Unmarshal(&conf); err != nil {
+			fmt.Println(err.Error())
+		}
+
+		if err := c.ShouldBind(&conf); err == nil {
+			// fmt.Printf("%+v\n", conf)
+
+			yml, err := yaml.Marshal(conf)
+			if err != nil {
+				c.JSON(401, PostResponse{Status: "Error", Error: err.Error()})
+				return
+			}
+
+			reader := bytes.NewReader(yml)
+
+			if err := viper.MergeConfig(reader); err != nil {
+				c.JSON(400, PostResponse{Status: "Error", Error: err.Error()})
+				return
+			}
+
+			if err := viper.WriteConfig(); err != nil {
+				resp := PostResponse{Status: "Error", Error: err.Error()}
+				c.JSON(400, resp)
+				return
+			}
+			c.JSON(200, PostResponse{Status: "Ok"})
+			err = settings.ErrConfigIsDirty
+			status_channel <- err
+		} else {
+			c.JSON(400, err.Error())
+		}
 	})
 
 	r.POST("/api/getPSK", func(c *gin.Context) {
@@ -126,5 +158,6 @@ func Interface_Server(server_root string, status_channel chan (error)) {
 		})
 	*/
 
-	r.Run(":8321")
+	r.Run(fmt.Sprintf(":%s", viper.GetString("interface.port")))
+
 }

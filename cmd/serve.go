@@ -58,6 +58,11 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// serveCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	serveCmd.Flags().StringP("server-root", "s", "./www", "Location of index.html")
+	serveCmd.Flags().IntP("server-port", "p", 8321, "Web server port")
+
+	viper.BindPFlag("interface.root", serveCmd.Flags().Lookup("server-root"))
+	viper.BindPFlag("interface.port", serveCmd.Flags().Lookup("server-port"))
 }
 
 var status_channel chan (error)
@@ -73,14 +78,14 @@ func do_serve() {
 
 	status_channel = make(chan error)
 
-	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-
 	if viper.GetBool("interface.enable") {
-		go webinterface.Interface_Server(viper.GetString("interface.serverroot"), status_channel)
+		go webinterface.Interface_Server(viper.GetString("interface.root"), status_channel)
 	}
 
 	for err == nil {
+
+		c := make(chan os.Signal)
+		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
 		if viper.GetBool("mqtt.enable") {
 			tradfri.MQTTSendTopic = mqttclient.SendTopic

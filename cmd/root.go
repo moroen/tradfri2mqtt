@@ -19,11 +19,13 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/moroen/tradfri2mqtt/settings"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
-var cfgFile string
+var config_path string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -37,31 +39,12 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
+	// Run: func(cmd *cobra.Command, args []string) {},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute(defCmd string) {
-	/*
-		var cmdFound bool
-		cmd := rootCmd.Commands()
-
-		for _, a := range cmd {
-			for _, b := range os.Args[1:] {
-				if a.Name() == b {
-					cmdFound = true
-					break
-				}
-			}
-		}
-
-			if cmdFound == false {
-				args := append([]string{defCmd}, os.Args[1:]...)
-				rootCmd.SetArgs(args)
-			}
-	*/
-
 	if len(os.Args) == 1 {
 		args := append([]string{defCmd}, os.Args[1:]...)
 		rootCmd.SetArgs(args)
@@ -74,7 +57,7 @@ func Execute(defCmd string) {
 }
 
 func init() {
-	cobra.OnInitialize(SetOptions)
+	cobra.OnInitialize(SetOptions, InitConfig)
 
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
@@ -88,6 +71,15 @@ func init() {
 	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Show debug messages")
+
+	rootCmd.PersistentFlags().StringP("config-path", "c", "", "Set configuration path")
+
+	viper.BindPFlag("config-path", rootCmd.PersistentFlags().Lookup("config-path"))
+
+}
+
+func InitConfig() {
+	settings.Init()
 }
 
 func SetOptions() {

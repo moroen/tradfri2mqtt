@@ -31,6 +31,8 @@ var _connection coap.CoapDTLSConnection
 var _mqtt_command_topic string
 var _mqtt_discovery_topic string
 
+var _is_started bool
+
 func _MQTTSendTopic_notConnected(topic string, msg []byte, retained bool) error {
 	log.WithFields(log.Fields{
 		"Topic":   topic,
@@ -81,22 +83,26 @@ func Start(wg *sync.WaitGroup, status_channel chan (error)) {
 		DisconnectTimer: viper.GetInt("tradfri.disconnecttimer"),
 	}
 	go _connection.Connect()
+	_is_started = true
 }
 
 func Stop() {
-	log.Info("Tradfri: Stopping")
-	if _stopObserve != nil {
-		_stopObserve()
-	}
-	_wgObserve.Wait()
-	if err := _connection.Disconnect(); err != nil {
-		log.WithFields(log.Fields{
-			"Error": err.Error(),
-		}).Error("Tradfri - Stop")
-	}
+	if _is_started {
+		log.Info("Tradfri: Stopping")
+		if _stopObserve != nil {
+			_stopObserve()
+		}
+		_wgObserve.Wait()
+		if err := _connection.Disconnect(); err != nil {
+			log.WithFields(log.Fields{
+				"Error": err.Error(),
+			}).Error("Tradfri - Stop")
+		}
 
-	log.Info("Tradfri: Stopped")
-	_wg.Done()
+		_is_started = false
+		log.Info("Tradfri: Stopped")
+		defer _wg.Done()
+	}
 }
 
 func Test() {
