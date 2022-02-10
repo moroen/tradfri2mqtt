@@ -22,7 +22,6 @@ import (
 	"github.com/moroen/tradfri2mqtt/settings"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var config_path string
@@ -74,12 +73,17 @@ func init() {
 
 	rootCmd.PersistentFlags().StringP("config-path", "c", "", "Set configuration path")
 
-	viper.BindPFlag("config-path", rootCmd.PersistentFlags().Lookup("config-path"))
+	// viper.BindPFlag("config-path", rootCmd.PersistentFlags().Lookup("config-path"))
 
 }
 
 func InitConfig() {
-	settings.Init()
+	if cpath, err := rootCmd.Flags().GetString("config-path"); err == nil {
+		settings.Init(cpath)
+	} else {
+		fmt.Println(err.Error())
+		settings.Init("")
+	}
 }
 
 func SetOptions() {

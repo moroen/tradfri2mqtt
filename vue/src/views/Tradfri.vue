@@ -18,7 +18,7 @@
     <q-tab-panels v-model="tab" animated>
       <q-tab-panel name="gateway">
         <q-form>
-          <q-checkbox v-model="enable" label="Enable MQTT" />
+          <q-checkbox v-model="enable" label="Enable Tradfri" />
           <q-input
             filled
             v-model="gateway"
@@ -112,12 +112,6 @@ const tab = ref("gateway");
 function promptPSK() {
   q.dialog({
     component: getPSK,
-
-    // props forwarded to your custom component
-    componentProps: {
-      text: "something",
-      // ...more..props...
-    },
   })
     .onOk(() => {
       // console.log("OK");

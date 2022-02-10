@@ -12,13 +12,11 @@ import (
 
 var ErrConfigIsDirty = errors.New("config is dirty")
 
-func Init() {
-	configpath := viper.GetString("config-path")
-
-	if configpath == "" {
+func Init(cpath string) {
+	if cpath == "" {
 		viper.AddConfigPath(configdir.LocalConfig("tradfri2mqtt"))
 	} else {
-		viper.AddConfigPath(configpath)
+		viper.AddConfigPath(cpath)
 	}
 
 	// File
@@ -80,8 +78,8 @@ type Config struct {
 	Tradfri struct {
 		Enable          bool   `json:"enable" yaml:"enable" env:"TRADFRI_ENABLE" env-default:"true"`
 		Gateway         string `json:"gateway" yaml:"gateway" mapstructure:"gateway"`
-		Identity        string `json:"ident" yaml:"ident"`
-		Passkey         string `json:"key" yaml:"key"`
+		Identity        string `json:"identity" yaml:"identity"`
+		Passkey         string `json:"passkey" yaml:"passkey"`
 		KeepAlive       int    `json:"keepalive" yaml:"keepalive" env-default:"0"`
 		DisconnectTimer int    `json:"disconnecttimer" yaml:"disconnecttimer" env-default:"0"`
 	} `json:"tradfri" yaml:"tradfri"`

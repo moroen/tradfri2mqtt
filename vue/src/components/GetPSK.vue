@@ -3,6 +3,7 @@
   <q-dialog ref="dialogRef" @hide="onDialogHide">
     <q-card class="q-dialog-plugin">
       <q-input
+        ref="gateway"
         filled
         v-model="gateway"
         label="Gateway IP *"
@@ -33,12 +34,27 @@ import { ref } from "vue";
 import { computed } from "vue";
 import { useStore } from "vuex";
 
+import { mapFields } from "vuex-map-fields";
+import store from "../store";
+import TradfriVue from "../views/Tradfri.vue";
+
 export default {
   methods: {
     show() {
       this.$refs.dialogRef.show();
       return this.dialogRef;
     },
+  },
+
+  computed: {
+    ...mapFields([
+      "tradfri.gateway",
+      "tradfri.identity",
+      "tradfri.passkey",
+      "tradfri.enable",
+      "tradfri.keepalive",
+      "tradfri.disconnecttimer",
+    ]),
   },
 
   props: {
@@ -54,39 +70,6 @@ export default {
   setup() {
     const $store = useStore();
     const masterKey = ref(null);
-
-    const gateway = computed({
-      get: () => $store.state.tradfri.gateway,
-      set: (val) => {
-        $store.commit("setConfig", {
-          section: "tradfri",
-          key: "gateway",
-          value: ref(val),
-        });
-      },
-    });
-
-    const id = computed({
-      get: () => $store.state.tradfri.ident,
-      set: (val) => {
-        $store.commit("setConfig", {
-          section: "tradfri",
-          key: "ident",
-          value: ref(val),
-        });
-      },
-    });
-
-    const key = computed({
-      get: () => $store.state.tradfri.key,
-      set: (val) => {
-        $store.commit("setConfig", {
-          section: "tradfri",
-          key: "key",
-          value: ref(val),
-        });
-      },
-    });
 
     // REQUIRED; must be called inside of setup()
     const {
@@ -104,7 +87,6 @@ export default {
 
     return {
       masterKey,
-      gateway,
       // This is REQUIRED;
       // Need to inject these (from useDialogPluginComponent() call)
       // into the vue scope for the vue html template
@@ -114,8 +96,9 @@ export default {
       // other methods that we used in our vue html template;
       // these are part of our example (so not required)
       onOKClick() {
+
         const postData = {
-          gateway: gateway.value,
+          gateway: $store.state.tradfri.gateway,
           key: masterKey.value,
         };
 

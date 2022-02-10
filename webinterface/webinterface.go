@@ -9,21 +9,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/moroen/tradfri2mqtt/settings"
 	"github.com/moroen/tradfri2mqtt/tradfri"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
-var logger = logrus.New()
-
 var status_channel chan (error)
-
-var logLevelMap = map[string]logrus.Level{
-	"trace": logrus.TraceLevel,
-	"debug": logrus.DebugLevel,
-	"info":  logrus.InfoLevel,
-	"warn":  logrus.WarnLevel,
-	"error": logrus.ErrorLevel,
-}
 
 var r *gin.Engine
 
@@ -60,14 +50,11 @@ func CORS() gin.HandlerFunc {
 
 var _server_root string
 
-func Interface_Server(server_root string, status_channel chan (error)) {
+func Interface_Server(server_root string, port int, status_channel chan (error)) {
 
 	status_channel = status_channel
 	_server_root = server_root
 	fmt.Print(server_root)
-
-	logger.SetLevel(logrus.DebugLevel)
-	logger.SetFormatter(&logrus.JSONFormatter{})
 
 	r = gin.Default()
 	r.Use(CORS())
@@ -152,12 +139,14 @@ func Interface_Server(server_root string, status_channel chan (error)) {
 
 	})
 
-	/*
-		r.NoRoute(func(c *gin.Context) {
-			c.File("./www/index.html")
-		})
-	*/
+	r.NoRoute(func(c *gin.Context) {
+		c.File("./www/index.html")
+	})
 
-	r.Run(fmt.Sprintf(":%s", viper.GetString("interface.port")))
+	log.WithFields(log.Fields{
+		"Port":    port,
+		"Webroot": server_root,
+	}).Debug("Interface")
+	r.Run(fmt.Sprintf(":%d", port))
 
 }

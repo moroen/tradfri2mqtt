@@ -16,6 +16,7 @@ limitations under the License.
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"sync"
@@ -30,6 +31,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
+
+var _server_port int
+var _server_root string
 
 // serveCmd represents the serve command
 var serveCmd = &cobra.Command{
@@ -48,6 +52,7 @@ to quickly create a Cobra application.`,
 
 func init() {
 	rootCmd.AddCommand(serveCmd)
+	cobra.OnInitialize(setConf)
 
 	// Here you will define your flags and configuration settings.
 
@@ -58,11 +63,33 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// serveCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	serveCmd.Flags().StringP("server-root", "s", "./www", "Location of index.html")
-	serveCmd.Flags().IntP("server-port", "p", 8321, "Web server port")
+	serveCmd.Flags().StringP("server-root", "s", "", "Location of index.html")
+	serveCmd.Flags().IntP("server-port", "p", 0, "Web server port")
 
-	viper.BindPFlag("interface.root", serveCmd.Flags().Lookup("server-root"))
-	viper.BindPFlag("interface.port", serveCmd.Flags().Lookup("server-port"))
+	// viper.BindPFlag("interface.root", serveCmd.Flags().Lookup("server-root"))
+	// viper.BindPFlag("interface.port-cmd", serveCmd.Flags().Lookup("server-port"))
+}
+
+func setConf() {
+	if port, err := serveCmd.Flags().GetInt("server-port"); err == nil {
+		if port == 0 {
+			_server_port = viper.GetInt("interface.port")
+		} else {
+			_server_port = port
+		}
+	} else {
+		fmt.Println(err.Error())
+	}
+
+	if root, err := serveCmd.Flags().GetString("server-root"); err == nil {
+		if root == "" {
+			_server_root = viper.GetString("interface.root")
+		} else {
+			_server_root = root
+		}
+	} else {
+		fmt.Println(err.Error())
+	}
 }
 
 var status_channel chan (error)
@@ -79,7 +106,7 @@ func do_serve() {
 	status_channel = make(chan error)
 
 	if viper.GetBool("interface.enable") {
-		go webinterface.Interface_Server(viper.GetString("interface.root"), status_channel)
+		go webinterface.Interface_Server(_server_root, _server_port, status_channel)
 	}
 
 	for err == nil {

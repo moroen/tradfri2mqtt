@@ -35,13 +35,13 @@ const getSettings = (context) => {
     });
 };
 
-const getNewPSK = (context, value) => {
+const getNewPSK = (context, payload) => {
   var settingsURL = "api/getPSK";
 
   const requestOptions = {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(value),
+    body: JSON.stringify(payload),
   };
 
   if (import.meta.env.MODE == "development") {

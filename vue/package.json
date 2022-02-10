@@ -3,6 +3,8 @@
   "version": "0.0.0",
   "scripts": {
     "build": "vite build",
+    "build-www": "vite build --outDir ../www",
+    "build-docker": "vite build --outDir /opt/tradfri2mqtt/www",
     "dev": "vite",
     "preview": "vite preview"
   },
