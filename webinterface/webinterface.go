@@ -140,7 +140,7 @@ func Interface_Server(server_root string, port int, status_channel chan (error))
 	})
 
 	r.NoRoute(func(c *gin.Context) {
-		c.File("./www/index.html")
+		c.File(fmt.Sprintf("%s/index.html", _server_root))
 	})
 
 	log.WithFields(log.Fields{
