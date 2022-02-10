@@ -1,0 +1,28 @@
+{
+  "name": "test",
+  "version": "0.0.0",
+  "scripts": {
+    "build": "vite build",
+    "build-www": "vite build --outDir ../www",
+    "build-docker": "vite build --outDir /opt/tradfri2mqtt/www",
+    "dev": "vite",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@quasar/extras": "^1.12.4",
+    "@vue/cli-service": "^4.5.15",
+    "quasar": "^2.4.13",
+    "vue": "^3.2.25",
+    "vue-router": "^4.0.0-0",
+    "vuex": "^4.0.0-0",
+    "vuex-map-fields": "^1.4.1"
+  },
+  "devDependencies": {
+    "@quasar/vite-plugin": "^1.0.4",
+    "@vitejs/plugin-vue": "^2.0.0",
+    "@vue/cli-plugin-router": "~4.5.0",
+    "@vue/cli-plugin-vuex": "~4.5.0",
+    "sass": "1.32.0",
+    "vite": "^2.7.2"
+  }
+}

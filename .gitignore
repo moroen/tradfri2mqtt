@@ -1,0 +1,7 @@
+dist/
+www/*
+*/.envrc
+*/.direnv
+*/__pycache__
+
+.vscode
