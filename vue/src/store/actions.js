@@ -15,9 +15,10 @@ const showError = function(msg) {
 const getSettings = (context) => {
   var settingsURL = "api/settings";
 
-  if (import.meta.env.MODE == "development") {
-    settingsURL = "http://localhost:8321/api/settings";
-  }
+  // if (import.meta.env.MODE == "development") {
+  //  settingsURL = "http://localhost:8321/api/settings";
+  //}
+
   fetch(settingsURL)
     .then((response) => {
       // console.log(response)
@@ -44,9 +45,10 @@ const getNewPSK = (context, payload) => {
     body: JSON.stringify(payload),
   };
 
-  if (import.meta.env.MODE == "development") {
-    settingsURL = "http://localhost:8321/api/getPSK";
-  }
+
+  // if (import.meta.env.MODE == "development") {
+  //  settingsURL = "http://localhost:8321/api/getPSK";
+  //}
 
   fetch(settingsURL, requestOptions)
     .then((response) => {
@@ -72,9 +74,9 @@ const saveSettings = (context) => {
 
   const settings = context.getters.SettingsJson;
 
-  if (import.meta.env.MODE == "development") {
-    settingsURL = "http://localhost:8321/api/settings";
-  }
+  // if (import.meta.env.MODE == "development") {
+  //  settingsURL = "http://localhost:8321/api/settings";
+  //}
 
   const requestOptions = {
     method: "POST",

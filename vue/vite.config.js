@@ -13,5 +13,15 @@ export default defineConfig({
     quasar({
       sassVariables: 'src/quasar-variables.sass'
     })
-  ]
+  ],
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://localhost:8321",
+        changeOrigin: true,
+        secure: false,
+        // rewrite: (path) => path.replace(/^\/api/, ""),
+      },
+    }
+  }
 })
