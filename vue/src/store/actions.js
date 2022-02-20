@@ -1,4 +1,5 @@
 import { Notify } from "quasar";
+import { newWebSocket, sendWSCommand } from "./websocket"
 
 const showError = function(msg) {
     Notify.create({
@@ -12,12 +13,13 @@ const showError = function(msg) {
     }, 2000)
   }
 
+const startWebSocket = (context) => {
+  const connection = newWebSocket(context);
+  context.commit("setConnection", connection)
+}
+
 const getSettings = (context) => {
   var settingsURL = "api/settings";
-
-  // if (import.meta.env.MODE == "development") {
-  //  settingsURL = "http://localhost:8321/api/settings";
-  //}
 
   fetch(settingsURL)
     .then((response) => {
@@ -30,9 +32,9 @@ const getSettings = (context) => {
       context.commit("setConfig", data);
     })
     .catch((err) => {
-      context.commit("setStatus", "Unable to get settings");
+      console.error("Unable to get settings - connection failed")
       showError("Unable to get settings");
-      console.error(err);
+      // console.error(err);
     });
 };
 
@@ -102,8 +104,16 @@ const saveSettings = (context) => {
   console.log(settings);
 };
 
+const doTest = () => {
+  console.log("Do test")
+  showError("Testing")
+}
+
 export default {
   getSettings,
+  doTest,
+  startWebSocket,
+  sendWSCommand,
   getNewPSK,
   saveSettings,
 };

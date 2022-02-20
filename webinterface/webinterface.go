@@ -3,19 +3,18 @@ package webinterface
 import (
 	"bytes"
 	"fmt"
-	"net/http"
 
 	"github.com/ghodss/yaml"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
 	"github.com/moroen/tradfri2mqtt/settings"
 	"github.com/moroen/tradfri2mqtt/tradfri"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
-var status_channel chan (error)
+var _status_channel chan (error)
+var _wsViper *viper.Viper
 
 var r *gin.Engine
 
@@ -52,46 +51,30 @@ func CORS() gin.HandlerFunc {
 
 var _server_root string
 
-var wsupgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin:     func(r *http.Request) bool { return true },
-}
-
-func wshandler(w http.ResponseWriter, r *http.Request) {
-	conn, err := wsupgrader.Upgrade(w, r, nil)
-	if err != nil {
-		fmt.Println("Failed to set websocket upgrade: %+v", err)
-		return
-	}
-
-	for {
-		t, msg, err := conn.ReadMessage()
-		if err != nil {
-			break
-		}
-		conn.WriteMessage(t, msg)
-	}
+func SetInterfaceSettingsDefaults() {
+	_wsViper = viper.New()
+	_wsViper.SetDefault("sendLog", false)
 }
 
 func Interface_Server(server_root string, port int, status_channel chan (error)) {
 
-	status_channel = status_channel
+	_status_channel = status_channel
 	_server_root = server_root
-	fmt.Print(server_root)
+
+	SetInterfaceSettingsDefaults()
 
 	r = gin.Default()
 	r.Use(CORS())
 
 	r.Use(static.Serve("/", static.LocalFile(_server_root, false)))
 
-	r.GET("/api/ws", func(c *gin.Context) {
-		fmt.Println("ws")
-		wshandler(c.Writer, c.Request)
-	})
+	if err := WebSocketRoutes(r); err != nil {
+		log.Error("Unable to add WebSocket Routes")
+	}
 
 	r.GET("/api/v1/hello", func(c *gin.Context) {
 		c.JSON(200, `{"message":"hello, hello, hello"}`)
+		log.Info("Hello World")
 	})
 
 	r.GET("/api/settings", func(c *gin.Context) {
@@ -142,7 +125,7 @@ func Interface_Server(server_root string, port int, status_channel chan (error))
 			}
 			c.JSON(200, PostResponse{Status: "Ok"})
 			err = settings.ErrConfigIsDirty
-			status_channel <- err
+			_status_channel <- err
 		} else {
 			c.JSON(400, err.Error())
 		}

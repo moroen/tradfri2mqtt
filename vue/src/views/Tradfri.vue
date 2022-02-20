@@ -126,12 +126,12 @@ function promptPSK() {
 export default {
   computed: {
     ...mapFields([
-      "tradfri.gateway",
-      "tradfri.identity",
-      "tradfri.passkey",
-      "tradfri.enable",
-      "tradfri.keepalive",
-      "tradfri.disconnecttimer",
+      "settings.tradfri.gateway",
+      "settings.tradfri.identity",
+      "settings.tradfri.passkey",
+      "settings.tradfri.enable",
+      "settings.tradfri.keepalive",
+      "settings.tradfri.disconnecttimer",
     ]),
   },
 };

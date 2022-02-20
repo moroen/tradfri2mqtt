@@ -48,4 +48,5 @@ function toggleLeftDrawer() {
 const status = store.state.status;
 
 store.dispatch("getSettings");
+store.dispatch("startWebSocket");
 </script>

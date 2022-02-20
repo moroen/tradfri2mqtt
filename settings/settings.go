@@ -46,6 +46,7 @@ func Init(cpath string) {
 	viper.SetDefault("interface.enable", true)
 	viper.SetDefault("interface.root", "./www")
 	viper.SetDefault("interface.port", 8321)
+	viper.SetDefault("interface.backloglimit", 10)
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
@@ -84,8 +85,9 @@ type Config struct {
 		DisconnectTimer int    `json:"disconnecttimer" yaml:"disconnecttimer" env-default:"0"`
 	} `json:"tradfri" yaml:"tradfri"`
 	Interface struct {
-		Enable     bool   `json:"enable" yaml:"enable" env:"WWW_ENABLE" env-default:"true"`
-		ServerRoot string `json:"gateway" yaml:"gateway" env:"MQTT_INTERFACE_ROOT" env-default:"./www"`
+		Enable       bool   `json:"enable" yaml:"enable" env:"WWW_ENABLE" env-default:"true"`
+		ServerRoot   string `json:"gateway" yaml:"gateway" env:"MQTT_INTERFACE_ROOT" env-default:"./www"`
+		BacklogLimit int    `json:"backloglimit" yaml:"backloglimit" env:"MQTT_INTERFACE_BACKLOG_LIMIT" env-default: 10`
 	} `json:"interface" yaml:"interface"`
 }
 

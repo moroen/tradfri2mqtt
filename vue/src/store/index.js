@@ -1,69 +1,81 @@
-import { Notify } from 'quasar'
-import { createStore } from 'vuex'
-import { ref } from 'vue'
-import actions from './actions';
+import { Notify } from "quasar";
+import { createStore } from "vuex";
+import { ref } from "vue";
+import actions from "./actions";
 
 import { getField, updateField } from "vuex-map-fields";
-
-
+import { addLogEntry, clearLog } from "./websocket";
 
 export default createStore({
   state: {
-    tradfri: {
-      enable: true,
-      gateway: "127.0.0.2",
-      identity: "abcde",
-      passkey: "12345",
-      keepalive: ref(0),
-      disconnecttimer: ref(0)
-    },
-    mqtt: {
-      commandtopic:	"tradfri",
-      discoverytopic:	"homeassistant",
-      enable:	true,
-      host:	"127.0.0.1",
-      port: 1883
-    },
+    settings: {
+      tradfri: {
+        enable: true,
+        gateway: "127.0.0.2",
+        identity: "abcde",
+        passkey: "12345",
+        keepalive: ref(0),
+        disconnecttimer: ref(0),
+      },
+      mqtt: {
+        commandtopic: "tradfri",
+        discoverytopic: "homeassistant",
+        enable: true,
+        host: "127.0.0.1",
+        port: 1883,
+      },
 
-    interface: {
-      enable: true,
-      port :8321,
-      serverroot: "./www"
+      interface: {
+        enable: true,
+        port: 8321,
+        serverroot: "./www",
+      },
     },
-    status: "Ok"
+    status: "Ok",
+    websocket: {
+      connection: ref(null),
+      log: []
+    }
   },
   mutations: {
     updateField,
-    setConfig (state, payload) {
-      state[payload.section][payload.key] = payload.value
+    addLogEntry,
+    clearLog,
+    setConnection(state, payload) {
+      state.websocket.connection = payload
     },
-    setTradfri (state, payload) {
-      // console.log(payload)
-      state.tradfri = payload
+    setConfig(state, payload) {
+      state["settings"][payload.section][payload.key] = payload.value;
     },
-    setConfig (state, payload) {
+    setTradfri(state, payload) {
       // console.log(payload)
-      state.tradfri = payload.tradfri
-      state.mqtt = payload.mqtt
-      state.interface = payload.interface
+      state.settings.tradfri = payload;
+    },
+    setConfig(state, payload) {
+      // console.log(payload)
+      state.settings.tradfri = payload.tradfri;
+      state.settings.mqtt = payload.mqtt;
+      state.settings.interface = payload.interface;
     },
     setPSK(state, payload) {
       // console.log(payload)
-      state.tradfri.identity = payload.identity
-      state.tradfri.passkey = payload.passkey
+      state.settings.tradfri.identity = payload.identity;
+      state.settings.tradfri.passkey = payload.passkey;
     },
 
     setStatus(state, status) {
-      state.status=status
-    }
+      state.status = status;
+    },
   },
   actions,
-  modules: {
-  },
+  modules: {},
   getters: {
     getField,
     SettingsJson: (state) => {
-      return JSON.stringify(state)
-  }
-  }
-})
+      return JSON.stringify(state.settings);
+    },
+    wsConnection: (state) => {
+      return state.websocket.connection;
+    }
+  },
+});

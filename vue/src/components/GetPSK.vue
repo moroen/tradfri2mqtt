@@ -47,14 +47,7 @@ export default {
   },
 
   computed: {
-    ...mapFields([
-      "tradfri.gateway",
-      "tradfri.identity",
-      "tradfri.passkey",
-      "tradfri.enable",
-      "tradfri.keepalive",
-      "tradfri.disconnecttimer",
-    ]),
+    ...mapFields(["settings.tradfri.gateway"]),
   },
 
   props: {
@@ -96,7 +89,6 @@ export default {
       // other methods that we used in our vue html template;
       // these are part of our example (so not required)
       onOKClick() {
-
         const postData = {
           gateway: $store.state.tradfri.gateway,
           key: masterKey.value,
