@@ -90,7 +90,7 @@ export default {
       // these are part of our example (so not required)
       onOKClick() {
         const postData = {
-          gateway: $store.state.tradfri.gateway,
+          gateway: $store.state.settings.tradfri.gateway,
           key: masterKey.value,
         };
 

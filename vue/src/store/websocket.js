@@ -3,13 +3,11 @@ var storeContext;
 const wsURL = `ws://${window.location.host}/api/ws`;
 
 const onConnect = (event) => {
-  console.log(event);
   console.log("Successfully connected to the echo websocket server...");
 };
 
 const onMessage = (event) => {
   var obj = JSON.parse(event.data);
-  console.log(obj)
   storeContext.commit("addLogEntry", obj);
 };
 
