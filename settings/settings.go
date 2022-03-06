@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kirsle/configdir"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -13,11 +12,8 @@ import (
 var ErrConfigIsDirty = errors.New("config is dirty")
 
 func Init(cpath string) {
-	if cpath == "" {
-		viper.AddConfigPath(configdir.LocalConfig("tradfri2mqtt"))
-	} else {
-		viper.AddConfigPath(cpath)
-	}
+	fmt.Println(cpath)
+	viper.AddConfigPath(cpath)
 
 	// File
 	viper.SetConfigName("tradfri2mqtt")
@@ -50,7 +46,7 @@ func Init(cpath string) {
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			log.Debug("Setting - Config file not found. Creating default")
+			log.Info("Setting - Config file not found. Creating default")
 
 			if err := viper.SafeWriteConfig(); err != nil {
 				fmt.Println(err.Error())
