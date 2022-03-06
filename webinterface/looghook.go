@@ -2,7 +2,6 @@ package webinterface
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -15,15 +14,11 @@ var wsLogHook *WSLogHook
 func NewWSLogHook() *WSLogHook {
 	wsLogHook = new(WSLogHook)
 	backlogLimit = viper.GetInt("interface.backloglimit")
-	fmt.Println(backlogLimit)
 	return wsLogHook
 }
 
 func MarshalEntry(e *logrus.Entry) ([]byte, error) {
 	t := e.Time.Format("2006-01-02 15:04:05")
-
-	fmt.Println(e.Data)
-
 	return json.Marshal(WSLogEntry{Level: e.Level.String(), Message: e.Message, AtTime: t})
 }
 
@@ -56,9 +51,6 @@ func (h *WSLogHook) SendLog(conn *WsConnection) {
 	defer h.mu.Unlock()
 
 	for _, message := range h.entries {
-
-		fmt.Println(string(message))
-
 		conn.SendJson(message)
 	}
 }

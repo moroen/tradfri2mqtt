@@ -33,6 +33,7 @@ type WsConnections struct {
 }
 
 type WsConnection struct {
+	mu            sync.Mutex
 	Id            string
 	Connection    *websocket.Conn
 	ShouldSendLog bool
@@ -67,7 +68,6 @@ func (c *WsConnections) SendEntry(message []byte) {
 
 	for _, conn := range c.connections {
 		if conn.ShouldSendLog {
-			fmt.Println("SendEntry", conn.Id)
 			conn.SendJson(message)
 		}
 	}
@@ -94,6 +94,8 @@ func (c *WsConnection) Init(conn *websocket.Conn) error {
 }
 
 func (c *WsConnection) SendJson(json []byte) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.Connection.SetWriteDeadline(time.Now().Add(time.Second * 5))
 	if err := c.Connection.WriteMessage(websocket.TextMessage, json); err != nil {
 		fmt.Println(err.Error())
@@ -136,23 +138,6 @@ func (c *WsConnection) Read() {
 	}()
 }
 
-/*
-func SendJson(json []byte) error {
-	fmt.Println("SendJSon - Sending message")
-	if wsConnection != nil {
-		if err := wsConnection.WriteMessage(websocket.TextMessage, json); err != nil {
-			fmt.Println("SendJson - Error", err.Error())
-			return err
-		} else {
-			fmt.Println("SendJson - Message sent")
-			return err
-		}
-	} else {
-		return errors.New("sendJson - Not connected")
-	}
-}
-*/
-
 var wsupgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
@@ -161,60 +146,14 @@ var wsupgrader = websocket.Upgrader{
 
 func wshandler(w http.ResponseWriter, r *http.Request) {
 	if wsConnection, err := wsupgrader.Upgrade(w, r, nil); err != nil {
-		fmt.Printf("Failed to set websocket upgrade: %+v\n", err)
+		logrus.WithFields(logrus.Fields{
+			"Error": err.Error(),
+		}).Error("Failed to set websocket upgrade")
 		return
 	} else {
 		Connections.Add(wsConnection)
 	}
 }
-
-/*
-func wshandler(w http.ResponseWriter, r *http.Request) {
-	var err error
-
-	if wsConnection, err = wsupgrader.Upgrade(w, r, nil); err != nil {
-		fmt.Printf("Failed to set websocket upgrade: %+v\n", err)
-		return
-	} else {
-		_wsViper.Set("sendLog", false)
-		// wsConnection.SetWriteDeadline(time.Now().Add(time.Second * 10))
-		wsConnection.SetCloseHandler(func(code int, text string) error {
-			_wsViper.Set("sendLog", false)
-			fmt.Println("close")
-			fmt.Println(code, text)
-			wsConnection = nil
-			return nil
-		})
-		logrus.Info("Websocket: Connected")
-		go func() {
-			for {
-				_, msg, err := wsConnection.ReadMessage()
-				if err != nil {
-					fmt.Println("test")
-					fmt.Println(err.Error())
-
-					return
-				}
-				var cmd WSocketCommand
-				if err := json.Unmarshal(msg, &cmd); err == nil {
-					switch cmd.Class {
-					case "log":
-						switch cmd.Command {
-						case "start":
-							wsLogHook.SendLog(wsConnection)
-							_wsViper.Set("sendLog", true)
-						case "stop":
-							_wsViper.Set("sendLog", false)
-						}
-					}
-				} else {
-					logrus.Error("Websocket: Unable to unmarshal command")
-				}
-			}
-		}()
-	}
-}
-*/
 
 type WSocketCommand struct {
 	Class   string `json:"class"`
@@ -228,12 +167,9 @@ func WebSocketRoutes(r *gin.Engine) error {
 	})
 
 	r.POST("/api/ws", func(c *gin.Context) {
-
-		fmt.Println("post")
 		var cmd WSocketCommand
 
 		if err := c.ShouldBind(&cmd); err == nil {
-			fmt.Println(cmd)
 			c.JSON(200, PostResponse{Status: "Ok"})
 		}
 

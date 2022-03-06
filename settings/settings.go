@@ -12,7 +12,6 @@ import (
 var ErrConfigIsDirty = errors.New("config is dirty")
 
 func Init(cpath string) {
-	fmt.Println(cpath)
 	viper.AddConfigPath(cpath)
 
 	// File
