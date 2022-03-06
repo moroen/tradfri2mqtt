@@ -98,10 +98,9 @@ const saveSettings = (context) => {
     console.log(data)
   })
   .catch((err) => {
+    console.error("Unable to save setting")
     showError("Unable to save settings");
   });
-
-  console.log(settings);
 };
 
 const doTest = () => {

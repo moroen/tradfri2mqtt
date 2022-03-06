@@ -15,6 +15,7 @@ require (
 	github.com/kirsle/configdir v0.0.0-20170128060238-e45d2f54772f
 	github.com/lucasb-eyer/go-colorful v1.2.0
 	github.com/moroen/gocoap/v5 v5.0.0-00010101000000-000000000000
+	github.com/rs/xid v1.3.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/viper v1.10.1

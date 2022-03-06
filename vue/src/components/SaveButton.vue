@@ -8,7 +8,6 @@ import { useStore } from "vuex";
 const store = useStore();
 
 const onClick = function () {
-  console.log("Click");
   store.dispatch("saveSettings");
 };
 </script>

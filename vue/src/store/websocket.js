@@ -9,6 +9,7 @@ const onConnect = (event) => {
 
 const onMessage = (event) => {
   var obj = JSON.parse(event.data);
+  console.log(obj)
   storeContext.commit("addLogEntry", obj);
 };
 

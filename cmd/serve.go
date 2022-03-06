@@ -107,7 +107,7 @@ func do_serve() {
 
 	if viper.GetBool("interface.enable") {
 		go webinterface.Interface_Server(_server_root, _server_port, status_channel)
-		hook := webinterface.GetLogHook()
+		hook := webinterface.NewWSLogHook()
 		log.AddHook(hook)
 	}
 

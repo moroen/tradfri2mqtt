@@ -2,7 +2,6 @@ package webinterface
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -12,7 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/gorilla/websocket"
-	"github.com/spf13/viper"
+	"github.com/rs/xid"
 )
 
 type WSLogHook struct {
@@ -21,82 +20,138 @@ type WSLogHook struct {
 }
 
 type WSLogEntry struct {
-	Level   string    `json:"level"`
-	Message string    `json:"message"`
-	AtTime  time.Time `json:"time"`
+	Level   string `json:"level"`
+	Message string `json:"message"`
+	AtTime  string `json:"time"`
 }
 
-var wsLogHook *WSLogHook
+var Connections WsConnections
 
-var wsConnection *websocket.Conn
-var backlogLimit int
-
-func GetLogHook() *WSLogHook {
-	wsLogHook = new(WSLogHook)
-	backlogLimit = viper.GetInt("interface.backloglimit")
-	fmt.Println(backlogLimit)
-	return wsLogHook
+type WsConnections struct {
+	mu          sync.Mutex
+	connections []*WsConnection
 }
 
-func MarshalEntry(e *logrus.Entry) ([]byte, error) {
-	return json.Marshal(WSLogEntry{Level: e.Level.String(), Message: e.Message, AtTime: e.Time})
+type WsConnection struct {
+	Id            string
+	Connection    *websocket.Conn
+	ShouldSendLog bool
 }
 
-func (h *WSLogHook) Fire(e *logrus.Entry) error {
-	h.AddLogItem(e)
-	if _wsViper.GetBool("sendLog") {
-		h.SendLatestEntry()
+func (c *WsConnections) Add(conn *websocket.Conn) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	nc := WsConnection{}
+	nc.Init(conn)
+	c.connections = append(c.connections, &nc)
+	return nil
+}
+
+func (c *WsConnections) Remove(Id string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for i := range c.connections {
+		if c.connections[i].Id == Id {
+			c.connections[i] = c.connections[len(c.connections)-1]
+			c.connections = c.connections[:len(c.connections)-1]
+			logrus.WithFields(logrus.Fields{
+				"Id": Id,
+			}).Debug("Connection removed")
+			return nil
+		}
 	}
 	return nil
 }
 
+func (c *WsConnections) SendEntry(message []byte) {
+
+	for _, conn := range c.connections {
+		if conn.ShouldSendLog {
+			fmt.Println("SendEntry", conn.Id)
+			conn.SendJson(message)
+		}
+	}
+
+}
+
+func (c *WsConnection) Close(code int, text string) error {
+	logrus.WithFields(logrus.Fields{
+		"Id": c.Id,
+	}).Info("Closing connection")
+	Connections.Remove(c.Id)
+	return nil
+}
+
+func (c *WsConnection) Init(conn *websocket.Conn) error {
+	c.Id = xid.New().String()
+	c.Connection = conn
+	c.Connection.SetCloseHandler(c.Close)
+	c.Read()
+	logrus.WithFields(logrus.Fields{
+		"Id": c.Id,
+	}).Info("New connection")
+	return nil
+}
+
+func (c *WsConnection) SendJson(json []byte) error {
+	c.Connection.SetWriteDeadline(time.Now().Add(time.Second * 5))
+	if err := c.Connection.WriteMessage(websocket.TextMessage, json); err != nil {
+		fmt.Println(err.Error())
+		return err
+	} else {
+		return err
+	}
+}
+
+func (c *WsConnection) Read() {
+	go func() {
+		for {
+			_, msg, err := c.Connection.ReadMessage()
+			if err != nil {
+				fmt.Println(err.Error())
+				return
+			} else {
+				logrus.WithFields(logrus.Fields{
+					"Id":      c.Id,
+					"Message": string(msg),
+				}).Debug("Connection read")
+				var cmd WSocketCommand
+				if err := json.Unmarshal(msg, &cmd); err == nil {
+					switch cmd.Class {
+					case "log":
+						switch cmd.Command {
+						case "start":
+							wsLogHook.SendLog(c)
+
+							c.ShouldSendLog = true
+						case "stop":
+							c.ShouldSendLog = false
+						}
+
+					}
+				}
+
+			}
+		}
+	}()
+}
+
+/*
 func SendJson(json []byte) error {
+	fmt.Println("SendJSon - Sending message")
 	if wsConnection != nil {
 		if err := wsConnection.WriteMessage(websocket.TextMessage, json); err != nil {
-			logrus.WithFields(logrus.Fields{
-				"Error": err.Error(),
-			}).Error("WebSocket - SendJson")
+			fmt.Println("SendJson - Error", err.Error())
 			return err
 		} else {
+			fmt.Println("SendJson - Message sent")
 			return err
 		}
 	} else {
 		return errors.New("sendJson - Not connected")
 	}
 }
-
-func (h *WSLogHook) AddLogItem(e *logrus.Entry) error {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
-	if json, err := MarshalEntry(e); err == nil {
-		h.entries = append(h.entries, json)
-	}
-
-	if l := len(h.entries); l > backlogLimit {
-		h.entries = h.entries[l-backlogLimit:]
-	}
-	return nil
-}
-
-func (h *WSLogHook) Levels() []logrus.Level {
-	return logrus.AllLevels
-}
-
-func (h *WSLogHook) SendLog(conn *websocket.Conn) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
-	for _, message := range h.entries {
-		SendJson(message)
-	}
-}
-
-func (h *WSLogHook) SendLatestEntry() {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	SendJson(h.entries[len(h.entries)-1])
-}
+*/
 
 var wsupgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
@@ -105,18 +160,40 @@ var wsupgrader = websocket.Upgrader{
 }
 
 func wshandler(w http.ResponseWriter, r *http.Request) {
+	if wsConnection, err := wsupgrader.Upgrade(w, r, nil); err != nil {
+		fmt.Printf("Failed to set websocket upgrade: %+v\n", err)
+		return
+	} else {
+		Connections.Add(wsConnection)
+	}
+}
+
+/*
+func wshandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	if wsConnection, err = wsupgrader.Upgrade(w, r, nil); err != nil {
 		fmt.Printf("Failed to set websocket upgrade: %+v\n", err)
 		return
 	} else {
+		_wsViper.Set("sendLog", false)
+		// wsConnection.SetWriteDeadline(time.Now().Add(time.Second * 10))
+		wsConnection.SetCloseHandler(func(code int, text string) error {
+			_wsViper.Set("sendLog", false)
+			fmt.Println("close")
+			fmt.Println(code, text)
+			wsConnection = nil
+			return nil
+		})
 		logrus.Info("Websocket: Connected")
 		go func() {
 			for {
 				_, msg, err := wsConnection.ReadMessage()
 				if err != nil {
-					break
+					fmt.Println("test")
+					fmt.Println(err.Error())
+
+					return
 				}
 				var cmd WSocketCommand
 				if err := json.Unmarshal(msg, &cmd); err == nil {
@@ -137,6 +214,7 @@ func wshandler(w http.ResponseWriter, r *http.Request) {
 		}()
 	}
 }
+*/
 
 type WSocketCommand struct {
 	Class   string `json:"class"`

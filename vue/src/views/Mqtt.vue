@@ -120,12 +120,11 @@ function promptPSK() {
 export default {
   computed: {
     ...mapFields([
-      "mqtt.host",
-      "mqtt.port",
-      "mqtt.commandtopic",
-      "mqtt.enable",
-      "mqtt.discoverytopic",
-      "tradfri.disconnecttimer",
+      "settings.mqtt.host",
+      "settings.mqtt.port",
+      "settings.mqtt.commandtopic",
+      "settings.mqtt.enable",
+      "settings.mqtt.discoverytopic",
     ]),
   },
 };

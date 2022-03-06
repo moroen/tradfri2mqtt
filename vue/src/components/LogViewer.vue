@@ -12,7 +12,9 @@
   >
     <div v-for="(message, idx) in log" :key="log">
       <span>{{ message.time }}</span>
-      <span>{{ message.level }}</span>
+      &nbsp;
+      <span :class="levelColor(message.level)">[{{ message.level }}]</span>
+      &nbsp;
       <span>{{ message.message }}</span>
     </div>
   </q-scroll-area>
@@ -22,6 +24,7 @@
 import { ref } from "vue";
 import { mapFields } from "vuex-map-fields";
 import { useStore } from "vuex";
+import { ClosePopup } from "quasar";
 
 // const connection = new WebSocket(`ws://${window.location.host}/api/ws`);
 const messages = ref([]);
@@ -31,6 +34,14 @@ const showlog = ref(false);
 const logtext = ref("");
 
 const store = useStore();
+
+const levelColor = (level) => {
+  if (level == "error") {
+    return "text-negative";
+  } else {
+    return "text-positive";
+  }
+};
 
 const onLogToggle = function (value) {
   console.log("Hi");
