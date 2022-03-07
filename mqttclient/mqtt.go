@@ -67,22 +67,24 @@ func GetMQTTClientConnection() mqtt.Client {
 }
 
 func SendTopic(topic string, payload []byte, retained bool) error {
-	if client := GetMQTTClientConnection(); client != nil {
-		log.WithFields(log.Fields{
-			"Topic":   topic,
-			"Payload": string(payload),
-		}).Debug("SendTopic")
-		if token := client.Publish(topic, 0, retained, payload); token.Error() != nil {
-			log.Error("Unable to publish to broker")
-			messageQueue = append(messageQueue, MQTTQueueItem{Topic: topic, Payload: payload, Retained: retained})
-			return token.Error()
-		}
+	if viper.GetBool("mqtt.enable") {
+		if client := GetMQTTClientConnection(); client != nil {
+			log.WithFields(log.Fields{
+				"Topic":   topic,
+				"Payload": string(payload),
+			}).Debug("SendTopic")
+			if token := client.Publish(topic, 0, retained, payload); token.Error() != nil {
+				log.Error("Unable to publish to broker")
+				messageQueue = append(messageQueue, MQTTQueueItem{Topic: topic, Payload: payload, Retained: retained})
+				return token.Error()
+			}
 
-	} else {
-		log.WithFields(log.Fields{
-			"topic":   string(topic),
-			"payload": string(payload),
-		}).Error("MQTT client connection not set")
+		} else {
+			log.WithFields(log.Fields{
+				"topic":   string(topic),
+				"payload": string(payload),
+			}).Error("MQTT client connection not set")
+		}
 	}
 	return nil
 }

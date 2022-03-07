@@ -24,7 +24,9 @@ var _stopObserve func()
 
 // var cfg settings.Config
 
+// Send Functions
 var MQTTSendTopic func(string, []byte, bool) error
+var WebSocketSend func([]byte) error
 
 var _connection coap.CoapDTLSConnection
 
@@ -73,7 +75,7 @@ func Start(wg *sync.WaitGroup, status_channel chan (error)) {
 		RetryConnect: true,
 		OnConnect:    onConnect,
 		OnConnectionFailed: func() {
-			log.Error(fmt.Sprintf("Tradfri: Unable to connected to gateway at [tcp://%s:%s]", viper.GetString("tradfri.gateway"), "5684"))
+			log.Error(fmt.Sprintf("Tradfri: Unable to connect to gateway at [tcp://%s:%s]", viper.GetString("tradfri.gateway"), "5684"))
 		},
 		OnDisconnect: func() {
 			log.Info(fmt.Sprintf("Tradfri: Disconnected from gateway at [tcp://%s:%s]", viper.GetString("tradfri.gateway"), "5684"))

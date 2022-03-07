@@ -71,7 +71,14 @@ func (c *WsConnections) SendEntry(message []byte) {
 			conn.SendJson(message)
 		}
 	}
+}
 
+func (c *WsConnections) SendJson(message []byte) error {
+
+	for _, conn := range c.connections {
+		conn.SendJson(message)
+	}
+	return nil
 }
 
 func (c *WsConnection) Close(code int, text string) error {

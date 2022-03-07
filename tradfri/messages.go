@@ -63,6 +63,7 @@ func SendState(msg []byte) error {
 			color_mode = "color_temp"
 		}
 
+		// MQTT
 		message := MQTTLightMessage{State: state, Brightness: int(info.Dimmer), ColorMode: color_mode, ColorTemp: color_temp}
 		message.Color.X, message.Color.Y = info.ColorValues.ToFloat()
 
@@ -77,6 +78,8 @@ func SendState(msg []byte) error {
 				"Error": err.Error(),
 			}).Error("Show - Send dimmer message")
 		}
+
+		// WebSocket
 
 		if err != nil {
 			log.Fatal(err.Error())
