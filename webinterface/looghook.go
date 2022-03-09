@@ -11,6 +11,12 @@ var backlogLimit int
 
 var wsLogHook *WSLogHook
 
+type WSLogEntry struct {
+	Level   string `json:"level"`
+	Message string `json:"message"`
+	AtTime  string `json:"time"`
+}
+
 func NewWSLogHook() *WSLogHook {
 	wsLogHook = new(WSLogHook)
 	backlogLimit = viper.GetInt("interface.backloglimit")
@@ -19,7 +25,9 @@ func NewWSLogHook() *WSLogHook {
 
 func MarshalEntry(e *logrus.Entry) ([]byte, error) {
 	t := e.Time.Format("2006-01-02 15:04:05")
-	return json.Marshal(WSLogEntry{Level: e.Level.String(), Message: e.Message, AtTime: t})
+	entry := WsMessage{Class: "log"}
+	entry.Data = WSLogEntry{Level: e.Level.String(), Message: e.Message, AtTime: t}
+	return json.Marshal(entry)
 }
 
 func (h *WSLogHook) Fire(e *logrus.Entry) error {

@@ -124,6 +124,9 @@ func do_serve() {
 		}
 
 		if viper.GetBool("tradfri.enable") {
+			if viper.GetBool("interface.enable") {
+				tradfri.WebSocketSend = webinterface.Connections.SendDeviceJSON
+			}
 			go tradfri.Start(&wg, status_channel)
 		} else {
 			log.Info("Tradfri - Disabled by config")

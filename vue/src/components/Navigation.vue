@@ -7,7 +7,7 @@
 
       <q-item-section>
         <q-item-label>{{ page.name }}</q-item-label>
-        <q-item-label caption> {{ page.caption }}</q-item-label>
+        <q-item-label caption>{{ page.caption }}</q-item-label>
       </q-item-section>
     </q-item>
   </q-list>

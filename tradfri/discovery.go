@@ -47,6 +47,13 @@ type DimmerConfig struct {
 	SupportedColorModes []string   `json:"supported_color_modes"`
 }
 
+type WSDimmerMessage struct {
+	Id         int    `json:"id"`
+	Name       string `json:"name"`
+	Type       string `json:"type"`
+	ColorSpace string `json:"colorspace"`
+}
+
 type BlindConfig struct {
 	CommandTopic        string     `json:"command_topic"`
 	PositionTopic       string     `json:"position_topic"`
@@ -133,7 +140,17 @@ func SendConfigObject(msg []byte) {
 			},
 		}
 
-		// pretty_print(aConfig)
+		// WS
+		ws := WSDimmerMessage{
+			Id:         int(light.Id),
+			Type:       "dimmer",
+			Name:       light.Name,
+			ColorSpace: light.ColorSpace,
+		}
+
+		WebSocketSend(ws)
+
+		// MQTT
 		payload, err := json.Marshal(aConfig)
 		if err != nil {
 			log.Fatal(err.Error())

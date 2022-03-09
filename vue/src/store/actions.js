@@ -1,24 +1,36 @@
 import { Notify } from "quasar";
-import { newWebSocket, sendWSCommand } from "./websocket"
+import { newWebSocket, sendWSCommand } from "./websocket";
 
-const showError = function(msg) {
-    Notify.create({
-      type: 'negative',
+export const showError = function (msg) {
+  Notify.create(
+    {
+      type: "negative",
       message: msg,
+      position: "center",
       progress: true,
-  
+
       actions: [
-        { label: 'Dismiss', color: 'white', handler: () => { /* ... */ } }
-      ]
-    }, 2000)
-  }
+        {
+          label: "Dismiss",
+          color: "white",
+          handler: () => {
+            /* ... */
+          },
+        },
+      ],
+    },
+    2000
+  );
+};
 
 const startWebSocket = (context) => {
+  console.log("startWebSocket");
   const connection = newWebSocket(context);
-  context.commit("setConnection", connection)
-}
+  context.commit("setConnection", connection);
+};
 
 const getSettings = (context) => {
+  console.log("getSettings");
   var settingsURL = "api/settings";
 
   fetch(settingsURL)
@@ -32,7 +44,7 @@ const getSettings = (context) => {
       context.commit("setConfig", data);
     })
     .catch((err) => {
-      console.error("Unable to get settings - connection failed")
+      console.error("Unable to get settings - connection failed");
       showError("Unable to get settings");
       // console.error(err);
     });
@@ -46,7 +58,6 @@ const getNewPSK = (context, payload) => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   };
-
 
   // if (import.meta.env.MODE == "development") {
   //  settingsURL = "http://localhost:8321/api/getPSK";
@@ -74,6 +85,8 @@ const getNewPSK = (context, payload) => {
 const saveSettings = (context) => {
   var settingsURL = "api/settings";
 
+  console.log("saveSettings action");
+
   const settings = context.getters.SettingsJson;
 
   // if (import.meta.env.MODE == "development") {
@@ -87,26 +100,28 @@ const saveSettings = (context) => {
   };
 
   fetch(settingsURL, requestOptions)
-  .then((response) => {
-    if (response.status == 200) {
-      return response.json();
-    } else {
-      throw new Error("Unable");
-    }
-  })
-  .then((data) => {
-    console.log(data)
-  })
-  .catch((err) => {
-    console.error("Unable to save setting")
-    showError("Unable to save settings");
-  });
+    .then((response) => {
+      console.log("Got response");
+      if (response.status == 200) {
+        return response.json();
+      } else {
+        throw new Error("Unable");
+      }
+    })
+    .then((data) => {
+      console.log("Got data");
+      console.log(data);
+    })
+    .catch((err) => {
+      console.error("Unable to save setting\n" + err);
+      showError("Unable to save settings");
+    });
 };
 
 const doTest = () => {
-  console.log("Do test")
-  showError("Testing")
-}
+  console.log("Do test");
+  showError("Testing");
+};
 
 export default {
   getSettings,

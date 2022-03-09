@@ -1,34 +1,37 @@
 <template>
-  <div class="q-pa-md" style="max-width: 300px">About</div>
+  <q-btn label="Test" @click="test"></q-btn>
 
-  <q-btn @click="onClick(`start`)" label="Start"></q-btn>
-  <q-btn @click="onClick(`stop`)" label="Stop"></q-btn>
+  <scroller
+    ref="scrollArea"
+    :expand="true"
+    :bottom-margin="20"
+    style="border: 2px solid black; width: 99%"
+  >
+    <div v-for="(item, index) in messages" :key="index">{{ item }}</div>
+  </scroller>
 </template>
 
 <script setup>
-import { mapFields } from "vuex-map-fields";
-import { useStore } from "vuex";
+import { ref, onMounted } from "vue";
+import scroller from "../components/Scroller.vue";
 
-const store = useStore();
+// reactive state
+const messages = ref([]);
 
-const loc = window.location.hostname;
-const port = window.location.port;
+const scrollArea = ref(null);
 
-const onClick = (value) => {
-  store.dispatch(
-    "sendWSCommand",
-    JSON.stringify({
-      class: "log",
-      command: value,
-    })
-  );
+const createList = () => {
+  for (let i = 0; i < 40; i++) {
+    messages.value.push("Line " + i);
+  }
 };
-</script>
 
-<script>
-export default {
-  computed: {
-    ...mapFields(["tradfri.gateway", "tradfri.ident"]),
-  },
+const test = () => {
+  messages.value.push("New message");
+  scrollArea.value.scrollToBottom();
 };
+
+onMounted(() => {
+  createList();
+});
 </script>

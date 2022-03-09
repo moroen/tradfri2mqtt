@@ -4,7 +4,12 @@ import { ref } from "vue";
 import actions from "./actions";
 
 import { getField, updateField } from "vuex-map-fields";
-import { addLogEntry, clearLog } from "./websocket";
+import {
+  addLogEntry,
+  addWSLogEntry,
+  updateDeviceInfo,
+  clearLog,
+} from "./websocket";
 
 export default createStore({
   state: {
@@ -31,18 +36,27 @@ export default createStore({
         serverroot: "./www",
       },
     },
+    footBar: ref(null),
     status: "Ok",
     websocket: {
       connection: ref(null),
-      log: []
-    }
+      log: [],
+      wslog: [],
+      showLog: false,
+      devices: [],
+    },
   },
   mutations: {
     updateField,
     addLogEntry,
+    addWSLogEntry,
+    updateDeviceInfo,
     clearLog,
+    setFootBarRef(state, payload) {
+      state.footBar = payload;
+    },
     setConnection(state, payload) {
-      state.websocket.connection = payload
+      state.websocket.connection = payload;
     },
     setConfig(state, payload) {
       state["settings"][payload.section][payload.key] = payload.value;
@@ -76,6 +90,6 @@ export default createStore({
     },
     wsConnection: (state) => {
       return state.websocket.connection;
-    }
+    },
   },
 });

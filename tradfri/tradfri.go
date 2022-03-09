@@ -26,7 +26,7 @@ var _stopObserve func()
 
 // Send Functions
 var MQTTSendTopic func(string, []byte, bool) error
-var WebSocketSend func([]byte) error
+var WebSocketSend func(interface{}) error
 
 var _connection coap.CoapDTLSConnection
 

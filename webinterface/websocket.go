@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/moroen/tradfri2mqtt/tradfri"
 	"github.com/sirupsen/logrus"
 
 	"github.com/gorilla/websocket"
@@ -17,12 +18,6 @@ import (
 type WSLogHook struct {
 	mu      sync.Mutex
 	entries [][]byte
-}
-
-type WSLogEntry struct {
-	Level   string `json:"level"`
-	Message string `json:"message"`
-	AtTime  string `json:"time"`
 }
 
 var Connections WsConnections
@@ -37,6 +32,11 @@ type WsConnection struct {
 	Id            string
 	Connection    *websocket.Conn
 	ShouldSendLog bool
+}
+
+type WsMessage struct {
+	Class string      `json:"class"`
+	Data  interface{} `json:"data"`
 }
 
 func (c *WsConnections) Add(conn *websocket.Conn) error {
@@ -78,6 +78,21 @@ func (c *WsConnections) SendJson(message []byte) error {
 	for _, conn := range c.connections {
 		conn.SendJson(message)
 	}
+	return nil
+}
+
+func (c *WsConnections) SendDeviceJSON(message interface{}) error {
+
+	if ws, err := json.Marshal(WsMessage{
+		Class: "devices",
+		Data:  message,
+	}); err == nil {
+		for _, conn := range c.connections {
+			conn.SendJson(ws)
+		}
+
+	}
+
 	return nil
 }
 
@@ -126,6 +141,7 @@ func (c *WsConnection) Read() {
 				}).Debug("Connection read")
 				var cmd WSocketCommand
 				if err := json.Unmarshal(msg, &cmd); err == nil {
+					fmt.Printf("%+v\n", cmd)
 					switch cmd.Class {
 					case "log":
 						switch cmd.Command {
@@ -136,7 +152,11 @@ func (c *WsConnection) Read() {
 						case "stop":
 							c.ShouldSendLog = false
 						}
-
+					case "devices":
+						switch cmd.Command {
+						case "update":
+							tradfri.Discover(true)
+						}
 					}
 				}
 
