@@ -4,12 +4,7 @@ import { ref } from "vue";
 import actions from "./actions";
 
 import { getField, updateField } from "vuex-map-fields";
-import {
-  addLogEntry,
-  addWSLogEntry,
-  updateDeviceInfo,
-  clearLog,
-} from "./websocket";
+import { addLogEntry, addWSLogEntry, updateDeviceInfo, clearLog } from "./websocket";
 
 export default createStore({
   state: {
@@ -43,7 +38,7 @@ export default createStore({
       log: [],
       wslog: [],
       showLog: false,
-      devices: [],
+      devices: {},
     },
   },
   mutations: {

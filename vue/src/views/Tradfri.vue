@@ -31,7 +31,7 @@
 <script setup>
 import { ref } from "vue";
 
-import devices from "../components/Devices.vue";
+import devices from "../components/DeviceList.vue";
 import gateway from "../components/Gateway.vue";
 
 const tab = ref("devices");

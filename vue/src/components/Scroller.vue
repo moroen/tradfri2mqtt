@@ -12,7 +12,7 @@
 </template>
 
 <script setup>
-import { ref, defineProps, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { stringifyQuery } from "vue-router";
 
 const scrollContainer = ref(null);

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/moroen/tradfri2mqtt/tradfri"
 	log "github.com/sirupsen/logrus"
@@ -40,11 +39,14 @@ type QueueItem struct {
 
 var ItemQueue []QueueItem
 
+/*
 func AddToQueue(client mqtt.Client, msg mqtt.Message, handler func(mqtt.Client, mqtt.Message)) {
 	var item = QueueItem{Client: client, Message: msg, Handler: handler}
 	ItemQueue = append(ItemQueue, item)
 }
+*/
 
+/*
 func HandleQueue() {
 	for {
 		fmt.Println(ItemQueue)
@@ -56,6 +58,7 @@ func HandleQueue() {
 		time.Sleep(time.Second * 2)
 	}
 }
+*/
 
 func Subscribe(client mqtt.Client, status_channel chan (error)) {
 	_status_channel = status_channel
@@ -183,7 +186,16 @@ func State(client mqtt.Client, msg mqtt.Message) {
 		log.Fatalln(err.Error())
 	}
 
-	tradfri.State(int(deviceid), state)
+	tradfri.GetDevice(int(deviceid), func(d *tradfri.TradfriDevice, err error) {
+		d.SetState(state != 0, func(msg []byte, err error) {
+			if err != nil {
+				log.WithFields(log.Fields{
+					"Error": err.Error(),
+				}).Error("MQTT - Set State")
+			}
+		})
+	})
+
 }
 
 func SetHex(client mqtt.Client, msg mqtt.Message) {
@@ -248,7 +260,15 @@ func Dimmer(client mqtt.Client, msg mqtt.Message) {
 	}).Debug("MQTT-handlers - Dimmer")
 
 	if state != -1 {
-		tradfri.State(int(deviceid), state)
+		tradfri.GetDevice(int(deviceid), func(d *tradfri.TradfriDevice, err error) {
+			d.SetState(state != 0, func(msg []byte, err error) {
+				if err != nil {
+					log.WithFields(log.Fields{
+						"Error": err.Error(),
+					}).Error("MQTT - Dimmer - SetState")
+				}
+			})
+		})
 	}
 
 	if level != -1 {

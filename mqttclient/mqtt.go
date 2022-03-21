@@ -13,7 +13,7 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
-var ErrorBrokerConnectionRefused = errors.New("Bronker Error: Connection refused")
+var ErrorBrokerConnectionRefused = errors.New("bronker Error: Connection refused")
 
 var _client mqtt.Client
 var _status_channel chan (error)

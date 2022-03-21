@@ -72,6 +72,10 @@ func Interface_Server(server_root string, port int, status_channel chan (error))
 		log.Error("Unable to add WebSocket Routes")
 	}
 
+	if err := DeviceRoutes(r); err != nil {
+		log.Error("Unable to add Device Routes")
+	}
+
 	r.GET("/api/v1/hello", func(c *gin.Context) {
 		c.JSON(200, `{"message":"hello, hello, hello"}`)
 		log.Info("Hello World")

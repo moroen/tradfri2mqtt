@@ -47,13 +47,6 @@ type DimmerConfig struct {
 	SupportedColorModes []string   `json:"supported_color_modes"`
 }
 
-type WSDimmerMessage struct {
-	Id         int    `json:"id"`
-	Name       string `json:"name"`
-	Type       string `json:"type"`
-	ColorSpace string `json:"colorspace"`
-}
-
 type BlindConfig struct {
 	CommandTopic        string     `json:"command_topic"`
 	PositionTopic       string     `json:"position_topic"`
@@ -76,29 +69,38 @@ func Discover(force bool) {
 		defer done()
 
 		_connection.GET(_ctx, uriDevices, func(msg []byte, err error) {
-			// fmt.Println(string(msg))
-			_, err = jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-				if res, err := jsonparser.GetInt(value); err == nil {
-					uri := fmt.Sprintf("%s/%d", uriDevices, res)
-					_connection.GET(_ctx, uri, func(msg []byte, err error) {
-						SendConfigObject(msg)
-					})
-				} else {
-					fmt.Println(err.Error())
+			if err == nil {
+				if _, err = jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+					if res, err := jsonparser.GetInt(value); err == nil {
+						_devices.GetDevice(int(res), func(d *TradfriDevice, err error) {
+							WebSocketSend(d.WSStateObject())
+							SendConfigObject(d)
+						})
+					} else {
+						fmt.Println(err.Error())
+					}
+				}); err != nil {
+					log.WithFields(log.Fields{
+						"Error": err.Error(),
+					}).Error("Discover")
 				}
-			})
+			} else {
+				log.WithFields(log.Fields{
+					"Error": err.Error(),
+				}).Error("Discover")
+			}
 		})
 		_discovered = true
 	}
 }
 
-func SendConfigObject(msg []byte) {
-	if light, err := ParseLightInfo(msg); err == nil {
+func SendConfigObject(d *TradfriDevice) {
+	if d.LightControl != nil {
 		// fmt.Println(light.Name)
 
-		cmdTopic := fmt.Sprintf("%s/%d/dimmer/set", _mqtt_command_topic, light.Id)
-		stTopic := fmt.Sprintf("%s/%d/dimmer", _mqtt_command_topic, light.Id)
-		uniqueID := fmt.Sprintf("tradfri_%d_light", light.Id)
+		cmdTopic := fmt.Sprintf("%s/%d/dimmer/set", _mqtt_command_topic, d.Id)
+		stTopic := fmt.Sprintf("%s/%d/dimmer", _mqtt_command_topic, d.Id)
+		uniqueID := fmt.Sprintf("tradfri_%d_light", d.Id)
 		idents := []string{uniqueID}
 
 		var color_mode bool
@@ -107,7 +109,7 @@ func SendConfigObject(msg []byte) {
 
 		// aConfig := DimmerConfig{StateValueTemplate: "{{ \"OFF\" if value_json.value == 0 else \"ON\" }}", CommandTopic: cmdTopic, StateTopic: stTopic, BrightnessCommandTopic: cmdTopic, BrightnessScale: 99, BrightnessStateTopic: stTopic, BrightnessValueTemplate: "{{ value_json.value }}", OnCommandType: "brightness", Name: light.Name, UniqueID: uniqueID, Device: DeviceInfo{Manufacturer: light.Manufacturer, Identifiers: idents, Model: light.Model, Name: light.Name}}
 
-		switch light.ColorSpace {
+		switch d.ColorSpace() {
 		case "WW":
 			brightness = true
 			color_mode = false
@@ -130,25 +132,15 @@ func SendConfigObject(msg []byte) {
 			SupportedColorModes: color_modes,
 			CommandTopic:        cmdTopic,
 			StateTopic:          stTopic,
-			Name:                light.Name,
+			Name:                d.Name,
 			UniqueID:            uniqueID,
 			Device: DeviceInfo{
-				Manufacturer: light.Manufacturer,
+				Manufacturer: d.DeviceInfo.Manufacturer,
 				Identifiers:  idents,
-				Model:        light.Model,
-				Name:         light.Name,
+				Model:        d.DeviceInfo.Model,
+				Name:         d.Name,
 			},
 		}
-
-		// WS
-		ws := WSDimmerMessage{
-			Id:         int(light.Id),
-			Type:       "dimmer",
-			Name:       light.Name,
-			ColorSpace: light.ColorSpace,
-		}
-
-		WebSocketSend(ws)
 
 		// MQTT
 		payload, err := json.Marshal(aConfig)
@@ -156,7 +148,7 @@ func SendConfigObject(msg []byte) {
 			log.Fatal(err.Error())
 		}
 
-		topic := fmt.Sprintf("%s/light/%d/config", _mqtt_discovery_topic, light.Id)
+		topic := fmt.Sprintf("%s/light/%d/config", _mqtt_discovery_topic, d.Id)
 
 		log.WithFields(log.Fields{
 			"topic":  topic,
@@ -164,11 +156,11 @@ func SendConfigObject(msg []byte) {
 		}).Debug("Disovery - Light")
 		MQTTSendTopic(topic, payload, true)
 
-	} else if plug, err := ParsePlugInfo(msg); err == nil {
+	} else if d.PlugControl != nil {
 
-		cmdTopic := fmt.Sprintf("%s/%d/switch/set", _mqtt_command_topic, plug.Id)
-		stdTopic := fmt.Sprintf("%s/%d/switch", _mqtt_command_topic, plug.Id)
-		uniqueID := fmt.Sprintf("tradfri_%d_switch", plug.Id)
+		cmdTopic := fmt.Sprintf("%s/%d/switch/set", _mqtt_command_topic, d.Id)
+		stdTopic := fmt.Sprintf("%s/%d/switch", _mqtt_command_topic, d.Id)
+		uniqueID := fmt.Sprintf("tradfri_%d_switch", d.Id)
 		idents := []string{uniqueID}
 		aConfig := SwitchConfig{
 			PayloadOn:     true,
@@ -176,13 +168,13 @@ func SendConfigObject(msg []byte) {
 			ValueTemplate: "{{ value_json.value }}",
 			CommandTopic:  cmdTopic,
 			StateTopic:    stdTopic,
-			Name:          plug.Name,
+			Name:          d.Name,
 			UniqueID:      uniqueID,
 			Device: DeviceInfo{
-				Manufacturer: plug.Manufacturer,
+				Manufacturer: d.DeviceInfo.Manufacturer,
 				Identifiers:  idents,
-				Model:        plug.Model,
-				Name:         plug.Name,
+				Model:        d.DeviceInfo.Manufacturer,
+				Name:         d.Name,
 			},
 		}
 
@@ -193,7 +185,7 @@ func SendConfigObject(msg []byte) {
 			log.Fatal(err.Error())
 		}
 
-		topic := fmt.Sprintf("%s/switch/%d/config", _mqtt_discovery_topic, plug.Id)
+		topic := fmt.Sprintf("%s/switch/%d/config", _mqtt_discovery_topic, d.Id)
 
 		log.WithFields(log.Fields{
 			"topic":  topic,
@@ -202,12 +194,12 @@ func SendConfigObject(msg []byte) {
 
 		MQTTSendTopic(topic, payload, true)
 
-	} else if blind, err := ParseBlindInfo(msg); err == nil {
+	} else if d.BlindControl != nil {
 
-		cmdTopic := fmt.Sprintf("%s/%d/blind/set", _mqtt_command_topic, blind.Id)
-		posTopic := fmt.Sprintf("%s/%d/blind", _mqtt_command_topic, blind.Id)
-		setPosTopic := fmt.Sprintf("%s/%d/blind/set", _mqtt_command_topic, blind.Id)
-		uniqueID := fmt.Sprintf("tradfri_%d_blind", blind.Id)
+		cmdTopic := fmt.Sprintf("%s/%d/blind/set", _mqtt_command_topic, d.Id)
+		posTopic := fmt.Sprintf("%s/%d/blind", _mqtt_command_topic, d.Id)
+		setPosTopic := fmt.Sprintf("%s/%d/blind/set", _mqtt_command_topic, d.Id)
+		uniqueID := fmt.Sprintf("tradfri_%d_blind", d.Id)
 		idents := []string{uniqueID}
 
 		aConfig := BlindConfig{
@@ -220,8 +212,8 @@ func SendConfigObject(msg []byte) {
 			PayloadClose:        "{ \"position\": 100 }",
 			PayloadStop:         "",
 			UniqueID:            uniqueID,
-			Device:              DeviceInfo{Manufacturer: blind.Manufacturer, Identifiers: idents, Model: blind.Model, Name: blind.Name},
-			Name:                blind.Name,
+			Device:              DeviceInfo{Manufacturer: d.DeviceInfo.Manufacturer, Identifiers: idents, Model: d.DeviceInfo.Model, Name: d.Name},
+			Name:                d.Name,
 		}
 
 		payload, err := json.Marshal(aConfig)
@@ -229,7 +221,7 @@ func SendConfigObject(msg []byte) {
 			log.Fatal(err.Error())
 		}
 
-		topic := fmt.Sprintf("%s/cover/%d/config", _mqtt_discovery_topic, blind.Id)
+		topic := fmt.Sprintf("%s/cover/%d/config", _mqtt_discovery_topic, d.Id)
 
 		log.WithFields(log.Fields{
 			"topic":  topic,

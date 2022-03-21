@@ -8,9 +8,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+/*
 func State(deviceID int, state int) {
 	go func(deviceID int, state int) {
-		_devices.GetDeviceInfo(deviceID, func(device *TradfriDevice, err error) {
+		_devices.GetDevice(deviceID, func(device *TradfriDevice, err error) {
 			if uri, payload, err := device.SetState(state); err == nil {
 				ctx, done := context.WithTimeout(context.Background(), 10*time.Second)
 				defer done()
@@ -23,10 +24,11 @@ func State(deviceID int, state int) {
 		})
 	}(deviceID, state)
 }
+*/
 
 func Level(deviceID int, state int) {
 	go func(deviceID int, state int) {
-		_devices.GetDeviceInfo(deviceID, func(device *TradfriDevice, err error) {
+		_devices.GetDevice(deviceID, func(device *TradfriDevice, err error) {
 			if uri, payload, err := device.SetLevel(state); err == nil {
 				ctx, done := context.WithTimeout(context.Background(), 2*time.Second)
 				defer done()
@@ -42,7 +44,7 @@ func Level(deviceID int, state int) {
 
 func SetXY(deviceID int, x int, y int) {
 	go func(deviceID int, x int, y int) {
-		_devices.GetDeviceInfo(deviceID, func(device *TradfriDevice, err error) {
+		_devices.GetDevice(deviceID, func(device *TradfriDevice, err error) {
 			if uri, payload, err := device.SetXY(x, y); err == nil {
 				ctx, done := context.WithTimeout(context.Background(), 2*time.Second)
 				defer done()
@@ -58,7 +60,7 @@ func SetXY(deviceID int, x int, y int) {
 
 func SetHex(deviceID int, hex string) {
 	go func(deviceID int, hex string) {
-		_devices.GetDeviceInfo(deviceID, func(device *TradfriDevice, err error) {
+		_devices.GetDevice(deviceID, func(device *TradfriDevice, err error) {
 			if uri, payload, err := device.SetHex(hex); err == nil {
 				ctx, done := context.WithTimeout(context.Background(), 2*time.Second)
 				defer done()
@@ -74,7 +76,7 @@ func SetHex(deviceID int, hex string) {
 
 func SetBlind(deviceID int, position int) {
 	go func(deviceID int, position int) {
-		_devices.GetDeviceInfo(deviceID, func(device *TradfriDevice, err error) {
+		_devices.GetDevice(deviceID, func(device *TradfriDevice, err error) {
 			if uri, payload, err := device.SetBlind(position); err == nil {
 				ctx, done := context.WithTimeout(context.Background(), 2*time.Second)
 				defer done()

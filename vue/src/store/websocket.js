@@ -30,7 +30,7 @@ export const addWSLogEntry = (state, payload) => {
 };
 
 export const updateDeviceInfo = (state, payload) => {
-  state.websocket.devices.push(payload);
+  state.websocket.devices[payload.id] = payload;
 };
 
 export const clearLog = (state) => {
