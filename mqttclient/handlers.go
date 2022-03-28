@@ -272,7 +272,15 @@ func Dimmer(client mqtt.Client, msg mqtt.Message) {
 	}
 
 	if level != -1 {
-		tradfri.Level(int(deviceid), level)
+		tradfri.GetDevice(int(deviceid), func(d *tradfri.TradfriDevice, err error) {
+			d.SetLevel(level, func(msg []byte, err error) {
+				if err != nil {
+					log.WithFields(log.Fields{
+						"Error": err.Error(),
+					}).Error("MQTT - Set State")
+				}
+			})
+		})
 	}
 
 	if x != -1 {

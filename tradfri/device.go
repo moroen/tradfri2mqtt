@@ -61,10 +61,11 @@ var ErrorNoHexControl = errors.New("tradfri Error: device has no hex control")
 type WSStateObject struct {
 	Id         int    `json:"id"`
 	Name       string `json:"name"`
-	Type       string `json:"type"`
+	Model      string `json:"model"`
+	Type       int    `json:"type"`
 	ColorSpace string `json:"colorspace"`
 	State      bool   `json:"state"`
-	Dimmer     int64  `json:"dimmer"`
+	Dimmer     int    `json:"dimmer"`
 }
 
 func (d *TradfriDevice) WSStateObject() WSStateObject {
@@ -72,12 +73,22 @@ func (d *TradfriDevice) WSStateObject() WSStateObject {
 	ws := WSStateObject{
 		Id:         d.Id,
 		Name:       d.Name,
-		Type:       d.GetType(),
+		Model:      d.DeviceInfo.Model,
+		Type:       d.DeviceType,
 		State:      d.GetState(),
 		ColorSpace: d.ColorSpace(),
+		Dimmer:     d.DimmerLevel(),
 	}
 
 	return ws
+}
+
+func (d *TradfriDevice) DimmerLevel() int {
+	if d.LightControl != nil {
+		return d.LightControl[0].Dimmer
+	} else {
+		return -1
+	}
 }
 
 func (d *TradfriDevice) ColorSpace() string {
@@ -136,13 +147,14 @@ func (d *TradfriDevice) SetState(state bool, handler func([]byte, error)) {
 	}
 }
 
-func (d *TradfriDevice) SetLevel(level int) (string, string, error) {
+func (d *TradfriDevice) SetLevel(level int, handler func([]byte, error)) {
+	ctx, done := context.WithTimeout(context.Background(), 10*time.Second)
+	defer done()
+
 	if d.LightControl != nil {
-		uri := fmt.Sprintf("%s/%d", uriDevices, d.Id)
-		payload := fmt.Sprintf("{ \"%s\": [{ \"%s\": %d, \"%s\": %d }] }", attrLightControl, attrLightDimmer, level, attrTransitionTime, 10)
-		return uri, payload, nil
+		_connection.PUT(ctx, fmt.Sprintf("%s/%d", uriDevices, d.Id), fmt.Sprintf("{ \"%s\": [{ \"%s\": %d, \"%s\": %d }] }", attrLightControl, attrLightDimmer, level, attrTransitionTime, 10), handler)
 	} else {
-		return "", "", ErrorNoDimmerControl
+		handler(nil, ErrorNoDimmerControl)
 	}
 }
 

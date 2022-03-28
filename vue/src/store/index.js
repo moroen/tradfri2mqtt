@@ -75,6 +75,9 @@ export default createStore({
     setStatus(state, status) {
       state.status = status;
     },
+    setDeviceDimmerLevel(state, payload) {
+      state.websocket.devices[payload.deviceid].dimmer = payload.level;
+    },
   },
   actions,
   modules: {},
@@ -85,6 +88,19 @@ export default createStore({
     },
     wsConnection: (state) => {
       return state.websocket.connection;
+    },
+    devices: (state) => (type) => {
+      let devs = Object.values(state.websocket.devices);
+      if (type == -1 || type == null) {
+        return devs;
+      } else {
+        return devs.filter((item) => {
+          return item.type == type;
+        });
+      }
+    },
+    device: (state) => (deviceid) => {
+      return state.websocket.devies[deviceid];
     },
   },
 });

@@ -1,46 +1,81 @@
 <template>
   <div ref="refToolbar">
     <q-toolbar>
+      <q-select
+        v-model="typeSelect"
+        :options="options"
+        emit-value
+        map-options
+        label="Device type"
+        style="width: 300px"
+      ></q-select>
       <q-space />
+
       <q-btn label="Update" color="primary" @click="UpdateDevices"></q-btn>
     </q-toolbar>
   </div>
 
-  <scroller
-    ref="scrollArea"
-    :expand="true"
-    :bottom-margin="20"
-    style="width: 99%; border: 1px solid black"
-  >
+  <scroller ref="scrollArea" :expand="true" :bottom-margin="20" style="width: 99%">
     <div v-for="(item, index) in devices" :key="index" class="row q-gutter-md">
-      <div class="col-auto">
-        <device-id :deviceid="item.id"></device-id>
-      </div>
-      <div class="col-3">
-        <device-name :deviceid="item.id"></device-name>
-      </div>
-      <div class="col-auto">
-        <device-state :deviceid="item.id"></device-state>
-      </div>
+      <device :deviceid="item.id"></device>
     </div>
   </scroller>
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed } from "vue";
 import { mapFields } from "vuex-map-fields";
 import { useStore } from "vuex";
 import scroller from "./Scroller.vue";
 
-import { DeviceId, DeviceName, DeviceState } from "./device/index";
+import { Device } from "./device/index";
 
 const store = useStore();
+
+const typeSelect = ref(-1);
+
+const options = [
+  {
+    label: "All",
+    value: -1,
+  },
+  {
+    label: "Remotes",
+    value: 0,
+  },
+  {
+    label: "Lights",
+    value: 2,
+  },
+  {
+    label: "Plugs",
+    value: 3,
+  },
+  {
+    label: "Blinds",
+    value: 7,
+  },
+  {
+    label: "Signal Repeaters",
+    value: 7,
+  },
+];
+
+var devices = computed(() => {
+  return store.getters.devices(typeSelect.value);
+});
 
 onMounted(() => {
   UpdateDevices();
 });
 
-const test = () => {};
+const test = () => {
+  type.value = 3;
+};
+
+const isDimmable = (device) => {
+  return device.type == "dimmer";
+};
 
 const UpdateDevices = () => {
   console.log("UpdateDevices");
@@ -51,15 +86,6 @@ const UpdateDevices = () => {
       command: "update",
     })
   );
-};
-</script>
-
-<script>
-export default {
-  computed: {
-    ...mapFields(["websocket.devices"]),
-  },
-  mounted() {},
 };
 </script>
 
