@@ -70,11 +70,13 @@ func Interface_Server(server_root string, port int, status_channel chan (error))
 
 	if _verbose {
 		gin.SetMode(gin.DebugMode)
+		r = gin.New()
+		r.Use(gin.Logger(), gin.Recovery())
 	} else {
 		gin.SetMode(gin.ReleaseMode)
+		r = gin.New()
+		r.Use(gin.Recovery())
 	}
-
-	r = gin.Default()
 
 	r.Use(CORS())
 

@@ -1,7 +1,6 @@
 package webinterface
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -40,7 +39,6 @@ func DeviceRoutes(r *gin.Engine) error {
 
 		if deviceid, err := strconv.Atoi(c.Param("deviceid")); err == nil {
 			if c.ShouldBind(&cmd); err == nil {
-				fmt.Printf("%+v\n", cmd)
 				switch cmd.Command {
 				case "state":
 					go setState(deviceid, cmd, stat)

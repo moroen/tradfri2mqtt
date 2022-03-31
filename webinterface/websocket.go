@@ -2,14 +2,15 @@ package webinterface
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/moroen/tradfri2mqtt/tradfri"
 	"github.com/sirupsen/logrus"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/gorilla/websocket"
 	"github.com/rs/xid"
@@ -96,7 +97,11 @@ func (c *WsConnections) SendDeviceJSON(message interface{}) error {
 	return nil
 }
 
-func (c *WsConnection) Close(code int, text string) error {
+func (c *WsConnection) Close() error {
+	return c.Connection.Close()
+}
+
+func (c *WsConnection) CloseHandler(code int, text string) error {
 	logrus.WithFields(logrus.Fields{
 		"Id": c.Id,
 	}).Info("Closing connection")
@@ -107,11 +112,12 @@ func (c *WsConnection) Close(code int, text string) error {
 func (c *WsConnection) Init(conn *websocket.Conn) error {
 	c.Id = xid.New().String()
 	c.Connection = conn
-	c.Connection.SetCloseHandler(c.Close)
+	c.Connection.SetCloseHandler(c.CloseHandler)
 	c.Read()
 	logrus.WithFields(logrus.Fields{
-		"Id": c.Id,
-	}).Info("New connection")
+		"Id":     c.Id,
+		"Remote": c.Connection.RemoteAddr().String(),
+	}).Info("New websocket connection")
 	return nil
 }
 
@@ -120,11 +126,18 @@ func (c *WsConnection) SendJson(json []byte) error {
 	defer c.mu.Unlock()
 	c.Connection.SetWriteDeadline(time.Now().Add(time.Second * 5))
 	if err := c.Connection.WriteMessage(websocket.TextMessage, json); err != nil {
-
-		log.WithFields(log.Fields{
-			"Error": err.Error(),
-		}).Error("websocket.WsConnection.SendJson failed")
-
+		if errors.Is(err, syscall.EPIPE) {
+			logrus.WithFields(logrus.Fields{
+				"Id":     c.Id,
+				"Local":  c.Connection.LocalAddr().String(),
+				"Remote": c.Connection.RemoteAddr().String(),
+			}).Info("Lost websocket connection")
+			c.Close()
+		} else {
+			logrus.WithFields(logrus.Fields{
+				"Error": err.Error(),
+			}).Error("websocket.WsConnection.SendJson failed")
+		}
 		return err
 	} else {
 		return err
@@ -137,9 +150,12 @@ func (c *WsConnection) Read() {
 			_, msg, err := c.Connection.ReadMessage()
 			if err != nil {
 
-				log.WithFields(log.Fields{
-					"Error": err.Error(),
-				}).Error("websocket.WsConnection.Read failed")
+				if !websocket.IsCloseError(err, 1001) {
+					logrus.WithFields(logrus.Fields{
+						"Error": err.Error(),
+					}).Error("websocket.WsConnection.Read failed")
+
+				}
 
 				return
 			} else {
