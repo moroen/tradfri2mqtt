@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gofrs/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
@@ -110,9 +111,21 @@ func Start(wg *sync.WaitGroup, status_channel chan (error)) {
 	var broker = viper.GetString("mqtt.host")
 	var port = viper.GetString("mqtt.port")
 	opts := mqtt.NewClientOptions()
+
+	if new_ident, uuid_err := uuid.NewV4(); uuid_err == nil {
+		opts.SetClientID(new_ident.String())
+	} else {
+		opts.SetClientID(time.Now().String())
+	}
+
+	opts.SetOrderMatters(false)
+
 	opts.AddBroker(fmt.Sprintf("tcp://%s:%s", broker, port))
-	opts.SetClientID("go_mqtt_client")
+
 	opts.SetDefaultPublishHandler(messagePubHandler)
+
+	opts.SetKeepAlive(time.Second * 60)
+
 	opts.OnConnect = connectHandler
 	opts.OnConnectionLost = connectLostHandler
 
