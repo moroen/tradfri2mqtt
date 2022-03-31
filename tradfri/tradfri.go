@@ -108,36 +108,6 @@ func Stop() {
 }
 
 func Test() {
-	/*
-		_devices.GetDevice(65549, func(device *TradfriDevice, err error) {
-			if uri, payload, err := device.SetState(0); err == nil {
-				ctx, done := context.WithTimeout(context.Background(), 2*time.Second)
-				defer done()
-				_connection.PUT(ctx, uri, payload, func(msg []byte, err error) {
-					fmt.Println(string(msg))
-				})
-			} else {
-				fmt.Println(err.Error())
-			}
-		})
-
-			ctx, done := context.WithTimeout(context.Background(), time.Second*2)
-			defer done()
-
-			_connection.GET(ctx, "15001/65560", func(msg []byte, err error) {
-
-				fmt.Println(string(msg))
-
-				var device TradfriDevice
-				if err := json.Unmarshal(msg, &device); err != nil {
-					fmt.Println(err.Error())
-				} else {
-					fmt.Printf("%+v\n", device)
-					fmt.Println(device.Id)
-					fmt.Println(device.LightControl[0].State)
-				}
-			})
-	*/
 }
 
 func Observe() {
@@ -148,6 +118,13 @@ func Observe() {
 	defer done()
 
 	_connection.GET(ctx, uriDevices, func(msg []byte, err error) {
+		if err != nil {
+			log.WithFields(log.Fields{
+				"Error": err.Error(),
+			}).Error("devices.Observe.GET failed")
+			return
+		}
+
 		if _, err = jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			if res, err := jsonparser.GetInt(value); err == nil {
 				go _connection.Observe(fmt.Sprintf("%s/%d", uriDevices, res), func(msg []byte, err error) {
@@ -166,7 +143,7 @@ func Observe() {
 		}); err != nil {
 			log.WithFields(log.Fields{
 				"error": err.Error(),
-			}).Error("Tradfri - Observe")
+			}).Error("devices.Observe failed")
 		}
 	})
 

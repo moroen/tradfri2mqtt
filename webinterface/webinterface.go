@@ -50,6 +50,11 @@ func CORS() gin.HandlerFunc {
 }
 
 var _server_root string
+var _verbose bool
+
+func SetVerbose(verbose bool) {
+	_verbose = verbose
+}
 
 func SetInterfaceSettingsDefaults() {
 	_wsViper = viper.New()
@@ -63,7 +68,14 @@ func Interface_Server(server_root string, port int, status_channel chan (error))
 
 	SetInterfaceSettingsDefaults()
 
+	if _verbose {
+		gin.SetMode(gin.DebugMode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	r = gin.Default()
+
 	r.Use(CORS())
 
 	r.Use(static.Serve("/", static.LocalFile(_server_root, false)))
@@ -90,20 +102,15 @@ func Interface_Server(server_root string, port int, status_channel chan (error))
 	})
 
 	r.POST("/api/settings", func(c *gin.Context) {
-		// conf := settings.GetConfig(false)
-
-		/*
-			if jsonData, err := ioutil.ReadAll(c.Request.Body); err == nil {
-				fmt.Println(string(jsonData))
-			} else {
-				fmt.Println(err.Error())
-			}
-		*/
 
 		var conf settings.Config
 
 		if err := viper.Unmarshal(&conf); err != nil {
-			fmt.Println(err.Error())
+
+			log.WithFields(log.Fields{
+				"Error": err.Error(),
+			}).Error("websocket.routes.settings failed")
+
 		}
 
 		if err := c.ShouldBind(&conf); err == nil {

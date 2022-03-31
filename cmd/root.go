@@ -16,7 +16,6 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/kirsle/configdir"
@@ -51,7 +50,9 @@ func Execute(defCmd string) {
 	}
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		log.WithFields(log.Fields{
+			"Error": err.Error(),
+		}).Error("rootCmd.Execute failed")
 		os.Exit(1)
 	}
 }

@@ -2,7 +2,6 @@ package webinterface
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/moroen/tradfri2mqtt/tradfri"
 	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/gorilla/websocket"
 	"github.com/rs/xid"
@@ -120,7 +120,11 @@ func (c *WsConnection) SendJson(json []byte) error {
 	defer c.mu.Unlock()
 	c.Connection.SetWriteDeadline(time.Now().Add(time.Second * 5))
 	if err := c.Connection.WriteMessage(websocket.TextMessage, json); err != nil {
-		fmt.Println(err.Error())
+
+		log.WithFields(log.Fields{
+			"Error": err.Error(),
+		}).Error("websocket.WsConnection.SendJson failed")
+
 		return err
 	} else {
 		return err
@@ -132,7 +136,11 @@ func (c *WsConnection) Read() {
 		for {
 			_, msg, err := c.Connection.ReadMessage()
 			if err != nil {
-				fmt.Println(err.Error())
+
+				log.WithFields(log.Fields{
+					"Error": err.Error(),
+				}).Error("websocket.WsConnection.Read failed")
+
 				return
 			} else {
 				logrus.WithFields(logrus.Fields{
@@ -141,7 +149,6 @@ func (c *WsConnection) Read() {
 				}).Debug("Connection read")
 				var cmd WSocketCommand
 				if err := json.Unmarshal(msg, &cmd); err == nil {
-					fmt.Printf("%+v\n", cmd)
 					switch cmd.Class {
 					case "log":
 						switch cmd.Command {

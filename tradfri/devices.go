@@ -51,7 +51,9 @@ func (d *DeviceList) GetDevice(id int, handler func(*TradfriDevice, error)) {
 
 		var device TradfriDevice
 		if err := json.Unmarshal(msg, &device); err != nil {
-			fmt.Println(err.Error())
+			log.WithFields(log.Fields{
+				"Error": err.Error(),
+			}).Error("discovery.DeviceList.GetDevices failed")
 			handler(nil, err)
 		} else {
 			d.devices[device.Id] = device

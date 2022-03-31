@@ -39,27 +39,6 @@ type QueueItem struct {
 
 var ItemQueue []QueueItem
 
-/*
-func AddToQueue(client mqtt.Client, msg mqtt.Message, handler func(mqtt.Client, mqtt.Message)) {
-	var item = QueueItem{Client: client, Message: msg, Handler: handler}
-	ItemQueue = append(ItemQueue, item)
-}
-*/
-
-/*
-func HandleQueue() {
-	for {
-		fmt.Println(ItemQueue)
-		if len(ItemQueue) > 0 {
-			log.Debug("Handling queue")
-			ItemQueue[0].Handler(ItemQueue[0].Client, ItemQueue[0].Message)
-			ItemQueue = ItemQueue[1:]
-		}
-		time.Sleep(time.Second * 2)
-	}
-}
-*/
-
 func Subscribe(client mqtt.Client, status_channel chan (error)) {
 	_status_channel = status_channel
 

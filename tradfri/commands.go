@@ -87,7 +87,9 @@ func RebootGateway() {
 	}
 
 	_connection.POST(ctx, uri, "1", func(msg []byte, err error) {
-		fmt.Println(string(msg))
+		log.WithFields(log.Fields{
+			"Message": string(msg),
+		}).Debug("commands.RebootGateway")
 	})
 	_connection.Disconnect()
 }

@@ -77,17 +77,20 @@ func Discover(force bool) {
 							SendConfigObject(d)
 						})
 					} else {
-						fmt.Println(err.Error())
+						log.WithFields(log.Fields{
+							"Error": err.Error(),
+						}).Error("discovery.Discover.jsonParser.GetInt failed")
 					}
 				}); err != nil {
 					log.WithFields(log.Fields{
 						"Error": err.Error(),
-					}).Error("Discover")
+					}).Error("discovery.Discover.jsonParser.ArrayEach failed")
 				}
 			} else {
 				log.WithFields(log.Fields{
 					"Error": err.Error(),
-				}).Error("Discover")
+				}).Error("discovery.Discover.GET failed")
+
 			}
 		})
 		_discovered = true
@@ -96,7 +99,6 @@ func Discover(force bool) {
 
 func SendConfigObject(d *TradfriDevice) {
 	if d.LightControl != nil {
-		// fmt.Println(light.Name)
 
 		cmdTopic := fmt.Sprintf("%s/%d/dimmer/set", _mqtt_command_topic, d.Id)
 		stTopic := fmt.Sprintf("%s/%d/dimmer", _mqtt_command_topic, d.Id)
@@ -229,11 +231,5 @@ func SendConfigObject(d *TradfriDevice) {
 		}).Debug("Disovery - Blind")
 
 		MQTTSendTopic(topic, payload, true)
-	}
-}
-
-func pretty_print(val interface{}) {
-	if output, err := json.MarshalIndent(val, "", " "); err == nil {
-		fmt.Println(string(output))
 	}
 }

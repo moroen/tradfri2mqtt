@@ -2,7 +2,6 @@ package settings
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -45,14 +44,17 @@ func Init(cpath string) {
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			log.Info("Setting - Config file not found. Creating default")
+			log.Info("Settings - Config file not found. Creating default")
 
 			if err := viper.SafeWriteConfig(); err != nil {
-				fmt.Println(err.Error())
+				log.WithFields(log.Fields{
+					"Error": err.Error(),
+				}).Error("settings.WriteConfig failed")
 			}
 		} else {
-			fmt.Println("Other error")
-			// Config file was found but another error was produced
+			log.WithFields(log.Fields{
+				"Error": err.Error(),
+			}).Error("serve.setConfig failed other")
 		}
 	} else {
 		viper.AutomaticEnv()

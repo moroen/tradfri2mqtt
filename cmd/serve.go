@@ -16,7 +16,6 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"os/signal"
 	"sync"
@@ -78,7 +77,9 @@ func setConf() {
 			_server_port = port
 		}
 	} else {
-		fmt.Println(err.Error())
+		log.WithFields(log.Fields{
+			"Error": err.Error(),
+		}).Error("serve.setConfig failed")
 	}
 
 	if root, err := serveCmd.Flags().GetString("server-root"); err == nil {
@@ -88,7 +89,9 @@ func setConf() {
 			_server_root = root
 		}
 	} else {
-		fmt.Println(err.Error())
+		log.WithFields(log.Fields{
+			"Error": err.Error(),
+		}).Error("serve.setConfig.Flags failed")
 	}
 }
 
@@ -106,6 +109,9 @@ func do_serve() {
 	status_channel = make(chan error)
 
 	if viper.GetBool("interface.enable") {
+		v, _ := rootCmd.Flags().GetBool("verbose")
+		webinterface.SetVerbose(v)
+
 		go webinterface.Interface_Server(_server_root, _server_port, status_channel)
 		hook := webinterface.NewWSLogHook()
 		log.AddHook(hook)

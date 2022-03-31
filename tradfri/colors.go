@@ -4,10 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"sort"
-
-	log "github.com/sirupsen/logrus"
-
-	colorful "github.com/lucasb-eyer/go-colorful"
 )
 
 type ColorMap map[int]map[string]string
@@ -96,6 +92,7 @@ func SetXY(id int64, x int64, y int64) error {
 }
 */
 
+/*
 func SetRGB(id int64, rgb string) error {
 	fmt.Printf("Device: %d - RGB: %s\n", id, rgb)
 	c, err := colorful.Hex(rgb)
@@ -105,11 +102,10 @@ func SetRGB(id int64, rgb string) error {
 
 	// h, s, v := c.Hsv()
 	// x, y, z := c.Xyz()
-	x, y, lum := c.Xyy()
+	x, y, _ := c.Xyy()
 
 	// fmt.Println("HSV: ", h, s, v)
-
-	fmt.Println("xyY:", x, y, lum)
+	// fmt.Println("xyY:", x, y, lum)
 
 	x = x * 65535
 	y = y * 65535
@@ -118,14 +114,9 @@ func SetRGB(id int64, rgb string) error {
 	payload := fmt.Sprintf("{ \"3311\": [{\"5709\": %d, \"5710\": %d}] }", int(x), int(y))
 
 	//payload := fmt.Sprintf("{ \"%s\": [{ \"%s\": %d }] }", attr_Light_control, attr_light_state, state)
-	fmt.Println(payload)
-	/*
-		if _, err = PutRequest(uri, payload); err != nil {
-			return err
-		}
-	*/
 	return nil
 }
+*/
 
 func GetColorMap(ColorSpace string) (ColorMap, error) {
 	switch ColorSpace {

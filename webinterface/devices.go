@@ -52,7 +52,9 @@ func DeviceRoutes(r *gin.Engine) error {
 				}
 
 			} else {
-				fmt.Println(err.Error())
+				logrus.WithFields(logrus.Fields{
+					"Error": err.Error(),
+				}).Error("devices.route.set failed")
 				c.JSON(http.StatusOK, gin.H{"Status": "Error", "Error": err.Error()})
 				return
 			}
@@ -89,7 +91,6 @@ func setState(deviceid int, cmd DevicePayload, stat chan gin.H) {
 	tradfri.GetDevice(deviceid, func(d *tradfri.TradfriDevice, err error) {
 		if err == nil {
 			d.SetState(cmd.State, func(msg []byte, err error) {
-				fmt.Println("SetState Done")
 				if err == nil {
 					stat <- gin.H{"Status": "Ok"}
 				} else {
@@ -100,7 +101,6 @@ func setState(deviceid int, cmd DevicePayload, stat chan gin.H) {
 				}
 			})
 		} else {
-			fmt.Println("Fails here")
 			logrus.WithFields(logrus.Fields{
 				"Error": err.Error(),
 			}).Error("API - SetState")
