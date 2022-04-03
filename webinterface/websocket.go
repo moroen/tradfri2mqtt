@@ -137,6 +137,7 @@ func (c *WsConnection) SendJson(json []byte) error {
 			logrus.WithFields(logrus.Fields{
 				"Error": err.Error(),
 			}).Error("websocket.WsConnection.SendJson failed")
+			c.Close()
 		}
 		return err
 	} else {
