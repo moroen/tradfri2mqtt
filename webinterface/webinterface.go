@@ -18,6 +18,8 @@ var _wsViper *viper.Viper
 
 var r *gin.Engine
 
+var hub *Hub
+
 type PostResponse struct {
 	Status string
 	Error  string
@@ -82,9 +84,13 @@ func Interface_Server(server_root string, port int, status_channel chan (error))
 
 	r.Use(static.Serve("/", static.LocalFile(_server_root, false)))
 
-	if err := WebSocketRoutes(r); err != nil {
-		log.Error("Unable to add WebSocket Routes")
-	}
+	// Websocket
+	hub = newHub()
+	go hub.run()
+
+	r.GET("/api/ws", func(c *gin.Context) {
+		serveWs(hub, c.Writer, c.Request)
+	})
 
 	if err := DeviceRoutes(r); err != nil {
 		log.Error("Unable to add Device Routes")

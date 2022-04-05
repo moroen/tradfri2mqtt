@@ -75,6 +75,7 @@ func Discover(force bool) {
 						_devices.GetDevice(int(res), func(d *TradfriDevice, err error) {
 							WebSocketSend(d.WSStateObject())
 							SendConfigObject(d)
+							time.Sleep(time.Millisecond * 5)
 						})
 					} else {
 						log.WithFields(log.Fields{
