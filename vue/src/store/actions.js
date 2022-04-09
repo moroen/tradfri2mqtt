@@ -1,5 +1,5 @@
 import { Notify } from "quasar";
-import { newWebSocket, sendWSCommand } from "./websocket";
+import { sendWSCommand } from "./websocket";
 
 export const showError = function (msg) {
   Notify.create(
@@ -21,12 +21,6 @@ export const showError = function (msg) {
     },
     2000
   );
-};
-
-const startWebSocket = (context) => {
-  console.log("startWebSocket");
-  const connection = newWebSocket(context);
-  context.commit("setConnection", connection);
 };
 
 const getSettings = (context) => {
@@ -126,7 +120,6 @@ const doTest = () => {
 export default {
   getSettings,
   doTest,
-  startWebSocket,
   sendWSCommand,
   getNewPSK,
   saveSettings,

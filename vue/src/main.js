@@ -14,7 +14,7 @@ import "quasar/src/css/index.sass";
 // and placed in same folder as main.js
 
 store.dispatch("getSettings");
-store.dispatch("startWebSocket");
+// store.dispatch("startWebSocket");
 
 const myApp = createApp(App);
 

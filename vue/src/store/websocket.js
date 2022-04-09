@@ -1,4 +1,7 @@
 var storeContext;
+var connectionDelay = 5000;
+const connectionMaxDelay = 25000;
+const connectionDelayDelta = 5000;
 
 import { showError } from "./actions";
 
@@ -39,21 +42,47 @@ export const clearLog = (state) => {
 
 // Actions
 export const sendWSCommand = (context, payload) => {
-  const connection = context.state.websocket.connection;
+  let connection = context.state.websocket.connection;
+
+  if (connection == null) {
+    storeContext = context;
+    connection = new WebSocket(wsURL);
+    connection.onmessage = onMessage;
+
+    connection.onopen = () => {
+      connectionDelay = 5000;
+      context.dispatch("sendWSCommand", payload);
+    };
+
+    connection.onclose = () => {
+      console.log("Connection closed");
+      context.commit("setConnection", null);
+    };
+
+    connection.onerror = () => {
+      console.log("Connection error");
+      setTimeout(() => {
+        context.dispatch("sendWSCommand", payload);
+      }, connectionDelay);
+
+      if (connectionDelay < connectionMaxDelay) {
+        connectionDelay = connectionDelay + connectionDelayDelta;
+      } else {
+        connectionDelay = connectionMaxDelay;
+      }
+    };
+
+    context.commit("setConnection", connection);
+
+    return;
+  }
+
   if (connection.readyState == WebSocket.OPEN) {
     connection.send(payload);
   } else {
+    context.commit("setConnection", null);
+    context.dispatch("sendWSCommand", payload);
+
     console.error("Unable to send WSCommand, socket not open");
-    showError("Unable to send WSCommand, socket not open");
   }
-};
-
-export const newWebSocket = (context) => {
-  storeContext = context;
-  const connection = new WebSocket(wsURL);
-  connection.onopen = onConnect;
-  connection.onmessage = onMessage;
-  connection.onerror = () => {};
-
-  return connection;
 };
