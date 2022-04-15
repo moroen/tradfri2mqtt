@@ -79,8 +79,6 @@ const getNewPSK = (context, payload) => {
 const saveSettings = (context) => {
   var settingsURL = "api/settings";
 
-  console.log("saveSettings action");
-
   const settings = context.getters.SettingsJson;
 
   // if (import.meta.env.MODE == "development") {
@@ -95,7 +93,6 @@ const saveSettings = (context) => {
 
   fetch(settingsURL, requestOptions)
     .then((response) => {
-      console.log("Got response");
       if (response.status == 200) {
         return response.json();
       } else {
@@ -103,11 +100,10 @@ const saveSettings = (context) => {
       }
     })
     .then((data) => {
-      console.log("Got data");
-      console.log(data);
+      context.commit("setStatus", "Settings saved")
     })
     .catch((err) => {
-      console.error("Unable to save setting\n" + err);
+      context.commit("setStatus", "Unable to save settings");
       showError("Unable to save settings");
     });
 };

@@ -1,5 +1,5 @@
 <template>
-  <div ref="refToolbar">
+  <div ref="refToolbar" class="q-ma-md">
     <q-toolbar>
       <q-select
         v-model="typeSelect"
@@ -16,7 +16,12 @@
   </div>
 
   <scroller ref="scrollArea" :expand="true" :bottom-margin="20" style="width: 99%">
-    <div v-for="(item, index) in devices" :key="index" class="row q-gutter-md">
+    <div
+      v-for="(item, index) in devices"
+      :key="index"
+      class="row q-gutter-md q-pa-xs q-ma-xs"
+      style="background-color: #f6f6f6"
+    >
       <device :deviceid="item.id"></device>
     </div>
   </scroller>
@@ -57,7 +62,7 @@ const options = [
   },
   {
     label: "Signal Repeaters",
-    value: 7,
+    value: 6,
   },
 ];
 

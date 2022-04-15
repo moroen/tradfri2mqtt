@@ -36,6 +36,7 @@ func Init(cpath string) {
 	viper.SetDefault("tradfri.passkey", "")
 	viper.SetDefault("tradfri.keepalive", 0)
 	viper.SetDefault("tradfri.disconnecttimer", 0)
+	viper.SetDefault("tradfri.blindsinverted", false)
 
 	viper.SetDefault("interface.enable", true)
 	viper.SetDefault("interface.root", "./www")
@@ -80,6 +81,7 @@ type Config struct {
 		Passkey         string `json:"passkey" yaml:"passkey"`
 		KeepAlive       int    `json:"keepalive" yaml:"keepalive" env-default:"0"`
 		DisconnectTimer int    `json:"disconnecttimer" yaml:"disconnecttimer" env-default:"0"`
+		BlindsInverted  bool   `json:"blindsinverted" yaml:"blindsinverted"`
 	} `json:"tradfri" yaml:"tradfri"`
 	Interface struct {
 		Enable       bool   `json:"enable" yaml:"enable" env:"WWW_ENABLE" env-default:"true"`

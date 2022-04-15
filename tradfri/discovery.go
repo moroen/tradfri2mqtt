@@ -198,6 +198,19 @@ func SendConfigObject(d *TradfriDevice) {
 		MQTTSendTopic(topic, payload, true)
 
 	} else if d.BlindControl != nil {
+		/*
+			var openTopic string
+			var closeTopic string
+
+			inverted := viper.GetBool("tradfri.blindsinverted")
+			if inverted {
+				openTopic = "{ \"position\": 100 }"
+				closeTopic = "{ \"position\": 0 }"
+			} else {
+				openTopic = "{ \"position\": 0 }"
+				closeTopic = "{ \"position\": 100 }"
+			}
+		*/
 
 		cmdTopic := fmt.Sprintf("%s/%d/blind/set", _mqtt_command_topic, d.Id)
 		posTopic := fmt.Sprintf("%s/%d/blind", _mqtt_command_topic, d.Id)

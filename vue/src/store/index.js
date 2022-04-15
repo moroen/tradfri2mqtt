@@ -1,6 +1,6 @@
 import { Notify } from "quasar";
 import { createStore } from "vuex";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import actions from "./actions";
 
 import { getField, updateField } from "vuex-map-fields";
@@ -32,7 +32,7 @@ export default createStore({
       },
     },
     footBar: ref(null),
-    status: "Ok",
+    status: null,
     websocket: {
       connection: ref(null),
       log: [],

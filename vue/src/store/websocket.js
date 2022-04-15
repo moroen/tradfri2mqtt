@@ -50,17 +50,19 @@ export const sendWSCommand = (context, payload) => {
     connection.onmessage = onMessage;
 
     connection.onopen = () => {
+      context.commit("setStatus", "WebSocket connected")
       connectionDelay = 5000;
       context.dispatch("sendWSCommand", payload);
     };
 
     connection.onclose = () => {
+      context.commit("setStatus", "WebSocket not connected")
       console.log("Connection closed");
       context.commit("setConnection", null);
     };
 
     connection.onerror = () => {
-      console.log("Connection error");
+      context.commit("setStatus", "WebSocket failed to connect")
       setTimeout(() => {
         context.dispatch("sendWSCommand", payload);
       }, connectionDelay);
