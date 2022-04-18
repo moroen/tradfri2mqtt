@@ -6,7 +6,6 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
 /*
@@ -60,10 +59,12 @@ func SetHex(deviceID int, hex string) {
 }
 
 func SetBlind(deviceID int, position int) {
-	inverted := viper.GetBool("tradfri.blindsinverted")
-	if inverted {
-		position = 100 - position
-	}
+	/*
+		inverted := viper.GetBool("tradfri.blindsinverted")
+		if inverted {
+			position = 100 - position
+		}
+	*/
 
 	go func(deviceID int, position int) {
 		_devices.GetDevice(deviceID, func(device *TradfriDevice, err error) {

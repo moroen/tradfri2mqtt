@@ -7,6 +7,7 @@ import (
 
 	"github.com/buger/jsonparser"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"golang.org/x/net/context"
 )
 
@@ -198,19 +199,19 @@ func SendConfigObject(d *TradfriDevice) {
 		MQTTSendTopic(topic, payload, true)
 
 	} else if d.BlindControl != nil {
-		/*
-			var openTopic string
-			var closeTopic string
 
-			inverted := viper.GetBool("tradfri.blindsinverted")
-			if inverted {
-				openTopic = "{ \"position\": 100 }"
-				closeTopic = "{ \"position\": 0 }"
-			} else {
-				openTopic = "{ \"position\": 0 }"
-				closeTopic = "{ \"position\": 100 }"
-			}
-		*/
+		var openTopic string
+		var closeTopic string
+
+		inverted := viper.GetBool("tradfri.blindsinverted")
+		if inverted {
+			openTopic = "{ \"position\": 100 }"
+			closeTopic = "{ \"position\": 0 }"
+		} else {
+
+			openTopic = "{ \"position\": 0 }"
+			closeTopic = "{ \"position\": 100 }"
+		}
 
 		cmdTopic := fmt.Sprintf("%s/%d/blind/set", _mqtt_command_topic, d.Id)
 		posTopic := fmt.Sprintf("%s/%d/blind", _mqtt_command_topic, d.Id)
@@ -224,8 +225,8 @@ func SendConfigObject(d *TradfriDevice) {
 			PositionTemplate:    "{{ value_json.position }}",
 			SetPositionTopic:    setPosTopic,
 			SetPositionTemplate: "{ \"position\": {{ position }} }",
-			PayloadOpen:         "{ \"position\": 0 }",
-			PayloadClose:        "{ \"position\": 100 }",
+			PayloadOpen:         openTopic,
+			PayloadClose:        closeTopic,
 			PayloadStop:         "",
 			UniqueID:            uniqueID,
 			Device:              DeviceInfo{Manufacturer: d.DeviceInfo.Manufacturer, Identifiers: idents, Model: d.DeviceInfo.Model, Name: d.Name},

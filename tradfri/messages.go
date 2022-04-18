@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
 type MQTTmessage struct {
@@ -104,14 +103,16 @@ func SendState(msg []byte) error {
 		var level int
 
 		topic = fmt.Sprintf("tradfri/%d/blind", info.Id)
+		/*
+			inverted := viper.GetBool("tradfri.blindsinverted")
+			if inverted {
+				level = 100 - int(info.Level)
 
-		inverted := viper.GetBool("tradfri.blindsinverted")
-		if inverted {
-			level = 100 - int(info.Level)
-
-		} else {
-			level = int(info.Level)
-		}
+			} else {
+				level = int(info.Level)
+			}
+		*/
+		level = int(info.Level)
 
 		if valueJson, err = json.Marshal(MQTTmessage{Value: level}); err == nil {
 			log.WithFields(log.Fields{

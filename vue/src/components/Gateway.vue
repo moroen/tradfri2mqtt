@@ -1,69 +1,36 @@
 <template>
-<q-form>
-          <q-checkbox v-model="enable" label="Enable Tradfri" />
-          <q-input
-            filled
-            v-model="gateway"
-            label="Gateway IP *"
-            hint="Hostname or IP-address of the IKEA-tradfri gateway"
-            :rules="stringRules"
-            :disable="!enable"
-          />
+  <q-form>
+    <q-checkbox v-model="enable" label="Enable Tradfri" />
+    <q-input filled v-model="gateway" label="Gateway IP *" hint="Hostname or IP-address of the IKEA-tradfri gateway"
+      :rules="stringRules" :disable="!enable" />
 
-          <div class="row items-center content-stretch">
-            <div class="col-8">
-              <q-input
-                filled
-                v-model="identity"
-                label="Ident *"
-                hint="Ident"
-                :rules="stringRules"
-                :disable="!enable"
-              />
-              <q-input
-                filled
-                :disable="!enable"
-                v-model="passkey"
-                label="Key *"
-                hint="PSK"
-                :rules="stringRules"
-              />
-            </div>
-            <div class="q-pa-md">
-              <q-btn
-                label="Generate ID/PSK"
-                color="primary"
-                @click="promptPSK"
-                :disable="!enable"
-              ></q-btn>
-            </div>
-          </div>
-          <div class="row items-center">
-            <div class="col-3">
-              <q-input
-                filled
-                :disable="!enable"
-                v-model.number="keepalive"
-                label="Keep Alive interval:"
-                hint="Dis- and reconnect at every n seconds. 0 to disable"
-                :rules="timerRule"
-                type="number"
-              />
-            </div>
-            <div class="col-2"><q-space></q-space></div>
-            <div class="col-3">
-              <q-input
-                filled
-                :disable="!enable"
-                v-model.number="disconnecttimer"
-                label="Disconnect timer:"
-                hint="Disconnect after n seconds. 0 to disable"
-                :rules="timerRule"
-                type="number"
-              />
-            </div>
-          </div>
-        </q-form>
+    <div class="row items-center content-stretch">
+      <div class="col-8">
+        <q-input filled v-model="identity" label="Ident *" hint="Ident" :rules="stringRules" :disable="!enable" />
+        <q-input filled :disable="!enable" v-model="passkey" label="Key *" hint="PSK" :rules="stringRules" />
+      </div>
+      <div class="q-pa-md">
+        <q-btn label="Generate ID/PSK" color="primary" @click="promptPSK" :disable="!enable"></q-btn>
+      </div>
+    </div>
+    <div class="row items-center">
+      <div class="col-3">
+        <q-input filled :disable="!enable" v-model.number="keepalive" label="Keep Alive interval:" hint="0 to disable"
+          :rules="timerRule" type="number" />
+      </div>
+      <div class="col-2">
+        <q-space></q-space>
+      </div>
+      <div class="col-3">
+        <q-input filled :disable="!enable" v-model.number="disconnecttimer" label="Disconnect timer:"
+          hint="0 to disable" :rules="timerRule" type="number" />
+      </div>
+
+    </div>
+    <div>
+      <q-checkbox v-model="blindsinverted" label="Invert open/close position" />
+    </div>
+  </q-form>
 </template>
 
 <script setup>
@@ -106,6 +73,7 @@ export default {
       "settings.tradfri.enable",
       "settings.tradfri.keepalive",
       "settings.tradfri.disconnecttimer",
+      "settings.tradfri.blindsinverted",
     ]),
   },
 };
