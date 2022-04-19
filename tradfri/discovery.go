@@ -73,7 +73,7 @@ func Discover(force bool) {
 			if err == nil {
 				if _, err = jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 					if res, err := jsonparser.GetInt(value); err == nil {
-						_devices.GetDevice(int(res), func(d *TradfriDevice, err error) {
+						_devices.GetDevice(int(res), false, func(d *TradfriDevice, err error) {
 							WebSocketSend(d.WSStateObject())
 							SendConfigObject(d)
 							time.Sleep(time.Millisecond * 5)

@@ -2,6 +2,7 @@ package webinterface
 
 import (
 	"encoding/json"
+	"fmt"
 	"sync"
 
 	"github.com/moroen/tradfri2mqtt/tradfri"
@@ -31,6 +32,12 @@ func HandleCommand(msg []byte) error {
 			case "update":
 				tradfri.Discover(true)
 			}
+		case "device":
+			switch cmd.Command {
+			case "setxy":
+				fmt.Println(cmd.Value)
+				tradfri.Discover(true)
+			}
 		}
 	}
 	return nil
@@ -58,7 +65,7 @@ func SendDeviceJSON(message interface{}) error {
 }
 
 type WSocketCommand struct {
-	Class   string `json:"class"`
-	Command string `json:"command"`
-	Value   string `json:"value"`
+	Class   string      `json:"class"`
+	Command string      `json:"command"`
+	Value   interface{} `json:"value"`
 }

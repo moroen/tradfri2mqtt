@@ -126,6 +126,7 @@ func (d *TradfriDevice) GetState() bool {
 	}
 }
 
+// Performs actions
 func (d *TradfriDevice) SetState(state bool, handler func([]byte, error)) {
 	var value int
 
@@ -158,6 +159,19 @@ func (d *TradfriDevice) SetLevel(level int, handler func([]byte, error)) {
 	}
 }
 
+func (d *TradfriDevice) SetXY(x int, y int, handler func([]byte, error)) {
+	ctx, done := context.WithTimeout(context.Background(), 10*time.Second)
+	defer done()
+
+	if d.LightControl != nil {
+		_connection.PUT(ctx, fmt.Sprintf("%s/%d", uriDevices, d.Id), fmt.Sprintf("{ \"%s\": [{\"%s\": %d, \"%s\": %d}] }", attrLightControl, attrColorX, x, attrColorY, y), handler)
+	} else {
+		handler(nil, ErrorNoDimmerControl)
+	}
+}
+
+// Returns URL and payload
+/*
 func (d *TradfriDevice) SetXY(x int, y int) (string, string, error) {
 	if d.LightControl != nil {
 		uri := fmt.Sprintf("%s/%d", uriDevices, d.Id)
@@ -167,6 +181,7 @@ func (d *TradfriDevice) SetXY(x int, y int) (string, string, error) {
 		return "", "", ErrorNoDimmerControl
 	}
 }
+*/
 
 func (d *TradfriDevice) SetHex(hex string) (string, string, error) {
 	if d.LightControl != nil {

@@ -24,9 +24,13 @@ func DeviceRoutes(r *gin.Engine) error {
 
 	r.GET("api/devices/:deviceid", func(c *gin.Context) {
 		if deviceid, err := strconv.Atoi(c.Param("deviceid")); err == nil {
-			tradfri.GetDevice(deviceid, func(dev *tradfri.TradfriDevice, err error) {
-				c.JSON(http.StatusOK, dev)
+			devInfo := make(chan tradfri.TradfriDevice)
+
+			go tradfri.GetDevice(deviceid, true, func(dev *tradfri.TradfriDevice, err error) {
+				devInfo <- *dev
 			})
+			c.JSON(http.StatusOK, <-devInfo)
+
 		} else {
 			c.JSON(http.StatusBadRequest, PostResponse{Status: "Error", Error: err.Error()})
 		}
@@ -64,7 +68,7 @@ func DeviceRoutes(r *gin.Engine) error {
 }
 
 func setLevel(deviceid int, cmd DevicePayload, stat chan gin.H) {
-	tradfri.GetDevice(deviceid, func(d *tradfri.TradfriDevice, err error) {
+	tradfri.GetDevice(deviceid, false, func(d *tradfri.TradfriDevice, err error) {
 		if err == nil {
 			d.SetLevel(cmd.Level, func(msg []byte, err error) {
 				if err == nil {
@@ -86,7 +90,7 @@ func setLevel(deviceid int, cmd DevicePayload, stat chan gin.H) {
 }
 
 func setState(deviceid int, cmd DevicePayload, stat chan gin.H) {
-	tradfri.GetDevice(deviceid, func(d *tradfri.TradfriDevice, err error) {
+	tradfri.GetDevice(deviceid, false, func(d *tradfri.TradfriDevice, err error) {
 		if err == nil {
 			d.SetState(cmd.State, func(msg []byte, err error) {
 				if err == nil {

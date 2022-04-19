@@ -21,6 +21,7 @@ const state = computed({
   },
   set(value) {
     const command = {
+      deviceid: props.deviceid,
       command: "state",
       state: value,
     };

@@ -29,19 +29,21 @@ func (d *DeviceList) UpdateDevice(msg []byte) (*TradfriDevice, error) {
 	}
 }
 
-func (d *DeviceList) GetDevice(id int, handler func(*TradfriDevice, error)) {
+func (d *DeviceList) GetDevice(id int, forceUpdate bool, handler func(*TradfriDevice, error)) {
 	uri := fmt.Sprintf("%s/%d", uriDevices, id)
 	ctx, done := context.WithTimeout(context.Background(), 3*time.Second)
 	defer done()
 
-	if val, ok := d.devices[id]; ok {
-		log.WithFields(log.Fields{
-			"Cached": true,
-		}).Debug("GetDeviceInfo")
-		handler(&val, nil)
-		return
-	}
+	if !forceUpdate {
 
+		if val, ok := d.devices[id]; ok {
+			log.WithFields(log.Fields{
+				"Cached": true,
+			}).Debug("GetDeviceInfo")
+			handler(&val, nil)
+			return
+		}
+	}
 	_connection.GET(ctx, uri, func(msg []byte, err error) {
 		log.WithFields(log.Fields{
 			"Cached": false,
@@ -64,8 +66,8 @@ func (d *DeviceList) GetDevice(id int, handler func(*TradfriDevice, error)) {
 
 }
 
-func GetDevice(id int, handler func(*TradfriDevice, error)) {
-	_devices.GetDevice(id, handler)
+func GetDevice(id int, forceUpdate bool, handler func(*TradfriDevice, error)) {
+	_devices.GetDevice(id, forceUpdate, handler)
 }
 
 func GetDevicesList() map[int]TradfriDevice {
