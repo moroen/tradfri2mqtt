@@ -146,7 +146,22 @@ func Blind(msg mqtt.Message) {
 		"Position": value,
 	}).Debug("Handlers - Blind")
 
-	SetBlind(int(deviceid), value)
+	GetDevice(int(deviceid), false, func(d *TradfriDevice, err error) {
+		if err == nil {
+			d.SetBlind(value, func(msg []byte, err error) {
+				if err != nil {
+					log.WithFields(log.Fields{
+						"Error": err.Error(),
+					}).Error("MQTT - Blind")
+				}
+			})
+		} else {
+			log.WithFields(log.Fields{
+				"Error": err.Error(),
+			}).Error("MQTT - Blind - Unable to get device")
+		}
+	})
+
 }
 
 func Dimmer(msg mqtt.Message) {
@@ -171,8 +186,9 @@ func Dimmer(msg mqtt.Message) {
 		"Col_Temp": col_temp,
 	}).Debug("MQTT-handlers - Dimmer")
 
-	if state != -1 {
-		GetDevice(int(deviceid), false, func(d *TradfriDevice, err error) {
+	GetDevice(int(deviceid), false, func(d *TradfriDevice, err error) {
+
+		if state != -1 {
 			d.SetState(state != 0, func(msg []byte, err error) {
 				if err != nil {
 					log.WithFields(log.Fields{
@@ -180,11 +196,10 @@ func Dimmer(msg mqtt.Message) {
 					}).Error("MQTT - Dimmer - SetState")
 				}
 			})
-		})
-	}
 
-	if level != -1 {
-		GetDevice(int(deviceid), false, func(d *TradfriDevice, err error) {
+		}
+
+		if level != -1 {
 			d.SetLevel(level, func(msg []byte, err error) {
 				if err != nil {
 					log.WithFields(log.Fields{
@@ -192,11 +207,9 @@ func Dimmer(msg mqtt.Message) {
 					}).Error("MQTT - Set State")
 				}
 			})
-		})
-	}
+		}
 
-	if x != -1 {
-		GetDevice(int(deviceid), false, func(d *TradfriDevice, err error) {
+		if x != -1 {
 			d.SetXY(int(x), int(y), func(msg []byte, err error) {
 				if err != nil {
 					log.WithFields(log.Fields{
@@ -204,66 +217,38 @@ func Dimmer(msg mqtt.Message) {
 					}).Error("MQTT - Set XY")
 				}
 			})
-		})
-	}
-
-	if col_temp != -1 {
-		log.WithFields(log.Fields{
-			"col_temp": col_temp,
-		}).Debug("MQTT-handlers - Dimmer - SetColorTemp")
-		if col_temp >= 350 {
-			SetHex(int(deviceid), "efd275")
-		} else if col_temp < 280 {
-			SetHex(int(deviceid), "f5faf6")
-		} else {
-			SetHex(int(deviceid), "f1e0b5")
 		}
-	}
 
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Error("Dimmer message error")
-	}
-}
+		if col_temp != -1 {
+			log.WithFields(log.Fields{
+				"col_temp": col_temp,
+			}).Debug("MQTT-handlers - Dimmer - SetColorTemp")
 
-func SetHex(deviceID int, hex string) {
-	go func(deviceID int, hex string) {
-		_devices.GetDevice(deviceID, false, func(device *TradfriDevice, err error) {
-			if uri, payload, err := device.SetHex(hex); err == nil {
-				ctx, done := context.WithTimeout(context.Background(), 2*time.Second)
-				defer done()
-				_connection.PUT(ctx, uri, payload, func(msg []byte, err error) {})
+			var hex string
+
+			if col_temp >= 350 {
+				hex = "efd275"
+			} else if col_temp < 280 {
+				hex = "f5faf6"
 			} else {
-				log.WithFields(log.Fields{
-					"Error": err.Error(),
-				}).Error("Tradfri - SetHex")
+				hex = "f1e0b5"
 			}
-		})
-	}(deviceID, hex)
-}
 
-func SetBlind(deviceID int, position int) {
-	/*
-		inverted := viper.GetBool("tradfri.blindsinverted")
-		if inverted {
-			position = 100 - position
+			d.SetHex(hex, func(msg []byte, err error) {
+				if err != nil {
+					log.WithFields(log.Fields{
+						"Error": err.Error(),
+					}).Error("MQTT - Set HEX")
+				}
+			})
 		}
-	*/
 
-	go func(deviceID int, position int) {
-		_devices.GetDevice(deviceID, false, func(device *TradfriDevice, err error) {
-			if uri, payload, err := device.SetBlind(position); err == nil {
-				ctx, done := context.WithTimeout(context.Background(), 2*time.Second)
-				defer done()
-				_connection.PUT(ctx, uri, payload, func(msg []byte, err error) {})
-			} else {
-				log.WithFields(log.Fields{
-					"Error": err.Error(),
-				}).Error("Tradfri - SetBlind")
-			}
-		})
-	}(deviceID, position)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err.Error(),
+			}).Error("Dimmer message error")
+		}
+	})
 }
 
 func RebootGateway() {

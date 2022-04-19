@@ -170,35 +170,24 @@ func (d *TradfriDevice) SetXY(x int, y int, handler func([]byte, error)) {
 	}
 }
 
-// Returns URL and payload
-/*
-func (d *TradfriDevice) SetXY(x int, y int) (string, string, error) {
-	if d.LightControl != nil {
-		uri := fmt.Sprintf("%s/%d", uriDevices, d.Id)
-		payload := fmt.Sprintf("{ \"%s\": [{\"%s\": %d, \"%s\": %d}] }", attrLightControl, attrColorX, x, attrColorY, y)
-		return uri, payload, nil
-	} else {
-		return "", "", ErrorNoDimmerControl
-	}
-}
-*/
+func (d *TradfriDevice) SetHex(hex string, handler func([]byte, error)) {
+	ctx, done := context.WithTimeout(context.Background(), 10*time.Second)
+	defer done()
 
-func (d *TradfriDevice) SetHex(hex string) (string, string, error) {
 	if d.LightControl != nil {
-		uri := fmt.Sprintf("%s/%d", uriDevices, d.Id)
-		payload := fmt.Sprintf("{ \"%s\": [{ \"%s\": \"%s\" }] }", attrLightControl, attrLightHex, hex)
-		return uri, payload, nil
+		_connection.PUT(ctx, fmt.Sprintf("%s/%d", uriDevices, d.Id), fmt.Sprintf("{ \"%s\": [{ \"%s\": \"%s\" }] }", attrLightControl, attrLightHex, hex), handler)
 	} else {
-		return "", "", ErrorNoDimmerControl
+		handler(nil, ErrorNoDimmerControl)
 	}
 }
 
-func (d *TradfriDevice) SetBlind(position int) (string, string, error) {
+func (d *TradfriDevice) SetBlind(position int, handler func([]byte, error)) {
+	ctx, done := context.WithTimeout(context.Background(), 10*time.Second)
+	defer done()
+
 	if d.BlindControl != nil {
-		uri := fmt.Sprintf("%s/%d", uriDevices, d.Id)
-		payload := fmt.Sprintf("{ \"%s\": [{ \"%s\": %d}] }", attrBlindControl, attrBlindPosition, position)
-		return uri, payload, nil
+		_connection.PUT(ctx, fmt.Sprintf("%s/%d", uriDevices, d.Id), fmt.Sprintf("{ \"%s\": [{ \"%s\": %d}] }", attrBlindControl, attrBlindPosition, position), handler)
 	} else {
-		return "", "", ErrorNoBlindControl
+		handler(nil, ErrorNoBlindControl)
 	}
 }

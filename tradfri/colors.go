@@ -12,7 +12,9 @@ func CWmap() ColorMap {
 	var whiteBalance = ColorMap{
 		0:  {"Name": "Off", "Hex": "000000"},
 		10: {"Name": "Cold", "Hex": "f5faf6"},
-		20: {"Name": "Normal", "Hex": "f1e0b5"},
+		13: {"Name": "Medium Cold", "Hex": "f3f3e3"},
+		17: {"Name": "Normal", "Hex": "f2eccf"},
+		20: {"Name": "Medium Warm", "Hex": "f1e0b5"},
 		30: {"Name": "Warm", "Hex": "efd275"},
 	}
 
