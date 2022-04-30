@@ -58,16 +58,16 @@ func Subscribe(client mqtt.Client, status_channel chan (error)) {
 }
 
 func State(client mqtt.Client, msg mqtt.Message) {
-	tradfri.State(msg)
+	tradfri.State(msg.Topic(), msg.Payload())
 }
 
 func SetHex(client mqtt.Client, msg mqtt.Message) {
 }
 
 func Blind(client mqtt.Client, msg mqtt.Message) {
-	tradfri.Blind(msg)
+	tradfri.Blind(msg.Topic(), msg.Payload())
 }
 
 func Dimmer(client mqtt.Client, msg mqtt.Message) {
-	tradfri.Dimmer(msg)
+	tradfri.Dimmer(msg.Topic(), msg.Payload())
 }

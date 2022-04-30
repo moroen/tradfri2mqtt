@@ -1,14 +1,8 @@
 <template>
   <div ref="refToolbar" class="q-ma-md">
     <q-toolbar>
-      <q-select
-        v-model="typeSelect"
-        :options="options"
-        emit-value
-        map-options
-        label="Device type"
-        style="width: 300px"
-      ></q-select>
+      <q-select v-model="typeSelect" :options="options" emit-value map-options label="Device type" style="width: 300px">
+      </q-select>
       <q-space />
 
       <q-btn label="Update" color="primary" @click="UpdateDevices"></q-btn>
@@ -16,13 +10,11 @@
   </div>
 
   <scroller ref="scrollArea" :expand="true" :bottom-margin="20" style="width: 99%">
-    <div
-      v-for="(item, index) in devices"
-      :key="index"
-      class="row q-gutter-md q-pa-xs q-ma-xs"
-      style="background-color: #f6f6f6"
-    >
-      <device :deviceid="item.id"></device>
+    <div v-for="(item, index) in devices" :key="index" class="row q-gutter-md q-pa-xs q-ma-xs"
+      style="background-color: #f6f6f6">
+
+      as <device :deviceid="item.id"></device>
+
     </div>
   </scroller>
 </template>

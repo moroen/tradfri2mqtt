@@ -2,7 +2,11 @@ package webinterface
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	"net/http"
+	"sync"
+	"time"
 
 	"github.com/ghodss/yaml"
 	"github.com/gin-contrib/static"
@@ -14,11 +18,11 @@ import (
 )
 
 var _status_channel chan (error)
-var _wsViper *viper.Viper
+var _started bool
 
 var r *gin.Engine
-
 var hub *Hub
+var srv *http.Server
 
 type PostResponse struct {
 	Status string
@@ -51,24 +55,35 @@ func CORS() gin.HandlerFunc {
 	}
 }
 
-var _server_root string
 var _verbose bool
 
 func SetVerbose(verbose bool) {
 	_verbose = verbose
 }
 
+/*
 func SetInterfaceSettingsDefaults() {
 	_wsViper = viper.New()
 	_wsViper.SetDefault("sendLog", false)
 }
+*/
 
-func Interface_Server(server_root string, port int, status_channel chan (error)) {
+func Start(wg *sync.WaitGroup, server_root string, port int, status_channel chan (error)) {
 
 	_status_channel = status_channel
-	_server_root = server_root
 
-	SetInterfaceSettingsDefaults()
+	if port == 0 {
+		port = viper.GetInt("interface.port")
+	}
+
+	if server_root == "" {
+		server_root = viper.GetString("interface.root")
+	}
+
+	wg.Add(1)
+	defer wg.Done()
+
+	// SetInterfaceSettingsDefaults()
 
 	if _verbose {
 		gin.SetMode(gin.DebugMode)
@@ -80,9 +95,14 @@ func Interface_Server(server_root string, port int, status_channel chan (error))
 		r.Use(gin.Recovery())
 	}
 
+	srv = &http.Server{
+		Addr:    fmt.Sprintf(":%d", port),
+		Handler: r,
+	}
+
 	r.Use(CORS())
 
-	r.Use(static.Serve("/", static.LocalFile(_server_root, false)))
+	r.Use(static.Serve("/", static.LocalFile(server_root, false)))
 
 	// Websocket
 	hub = newHub()
@@ -171,13 +191,35 @@ func Interface_Server(server_root string, port int, status_channel chan (error))
 	})
 
 	r.NoRoute(func(c *gin.Context) {
-		c.File(fmt.Sprintf("%s/index.html", _server_root))
+		c.File(fmt.Sprintf("%s/index.html", server_root))
 	})
 
 	log.WithFields(log.Fields{
 		"Port":    port,
 		"Webroot": server_root,
-	}).Debug("Interface")
-	r.Run(fmt.Sprintf(":%d", port))
+	}).Info("Interface: Starting")
 
+	_started = true
+
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.WithFields(log.Fields{
+			"Error": err.Error(),
+		}).Error("Interface: Startup failed")
+		_started = false
+	}
+
+	log.Info("Interface: Stopped")
+}
+
+func Stop() {
+	if _started {
+		log.Info("Interface: Stopping...")
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := srv.Shutdown(ctx); err != nil {
+			log.Fatal("Server forced to shutdown: ", err)
+		}
+		_started = false
+	}
 }

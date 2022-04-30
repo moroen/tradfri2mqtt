@@ -26,5 +26,3 @@ const sendDeviceCommandObject = (deviceID, command) => {
 };
 
 export default sendDeviceCommandObject;
-
-const sendDeviceWSCommand = (deviceID, command);

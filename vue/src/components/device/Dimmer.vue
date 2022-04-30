@@ -22,10 +22,14 @@ const props = defineProps({
 
 const saveValue = () => {
   const command = {
-    command: "level",
-    level: store.state.websocket.devices[props.deviceid].dimmer,
+    class: "device",
+    // command: "state",
+    value: {
+      deviceid: props.deviceid,
+      payload: { brightness: store.state.websocket.devices[props.deviceid].dimmer },
+    }
   };
-  sendCommand(props.deviceid, command);
+  store.dispatch("sendWSCommand", JSON.stringify(command));
 };
 
 const level = computed({

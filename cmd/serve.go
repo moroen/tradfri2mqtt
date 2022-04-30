@@ -71,27 +71,11 @@ func init() {
 
 func setConf() {
 	if port, err := serveCmd.Flags().GetInt("server-port"); err == nil {
-		if port == 0 {
-			_server_port = viper.GetInt("interface.port")
-		} else {
-			_server_port = port
-		}
-	} else {
-		log.WithFields(log.Fields{
-			"Error": err.Error(),
-		}).Error("serve.setConfig failed")
+		_server_port = port
 	}
 
 	if root, err := serveCmd.Flags().GetString("server-root"); err == nil {
-		if root == "" {
-			_server_root = viper.GetString("interface.root")
-		} else {
-			_server_root = root
-		}
-	} else {
-		log.WithFields(log.Fields{
-			"Error": err.Error(),
-		}).Error("serve.setConfig.Flags failed")
+		_server_root = root
 	}
 }
 
@@ -108,31 +92,33 @@ func do_serve() {
 
 	status_channel = make(chan error)
 
-	if viper.GetBool("interface.enable") {
-		v, _ := rootCmd.Flags().GetBool("verbose")
-		webinterface.SetVerbose(v)
-
-		go webinterface.Interface_Server(_server_root, _server_port, status_channel)
-		hook := webinterface.NewWSLogHook()
-		log.AddHook(hook)
-	}
-
 	for err == nil {
 
 		c := make(chan os.Signal)
-		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+		signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+
+		if viper.GetBool("interface.enable") || _server_port != 0 {
+			v, _ := rootCmd.Flags().GetBool("verbose")
+			webinterface.SetVerbose(v)
+
+			tradfri.WebSocketSend = webinterface.SendDeviceJSON
+
+			go webinterface.Start(&wg, _server_root, _server_port, status_channel)
+			hook := webinterface.NewWSLogHook()
+			log.AddHook(hook)
+		} else {
+			tradfri.WebSocketSend = webinterface.SendDeviceJSON_not_enabled
+		}
 
 		if viper.GetBool("mqtt.enable") {
 			tradfri.MQTTSendTopic = mqttclient.SendTopic
 			go mqttclient.Start(&wg, status_channel)
 		} else {
 			log.Info("MQTT - Disabled by config")
+			tradfri.MQTTSendTopic = mqttclient.SendTopic_not_enabled
 		}
 
 		if viper.GetBool("tradfri.enable") {
-			if viper.GetBool("interface.enable") {
-				tradfri.WebSocketSend = webinterface.SendDeviceJSON
-			}
 			go tradfri.Start(&wg, status_channel)
 		} else {
 			log.Info("Tradfri - Disabled by config")
@@ -144,6 +130,7 @@ func do_serve() {
 
 			go tradfri.Stop()
 			go mqttclient.Stop()
+			go webinterface.Stop()
 
 			wg.Wait()
 
@@ -153,6 +140,7 @@ func do_serve() {
 				log.Info("Config has changed, restarting")
 				go tradfri.Stop()
 				go mqttclient.Stop()
+				go webinterface.Stop()
 				wg.Wait()
 			}
 			err = nil

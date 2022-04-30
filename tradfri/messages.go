@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 type MQTTmessage struct {
@@ -29,6 +30,8 @@ type MQTTLightMessage struct {
 func SendState(msg []byte) error {
 	var topic string
 	var valueJson []byte
+
+	retain := viper.GetBool("mqtt.retainstatusmessages")
 
 	// SendConfigObject(msg)
 
@@ -72,7 +75,7 @@ func SendState(msg []byte) error {
 				"Topic":   topic,
 				"Message": string(messageJson),
 			}).Debug("Show - Send dimmer message")
-			return MQTTSendTopic(topic, messageJson, false)
+			return MQTTSendTopic(topic, messageJson, retain)
 		} else {
 			log.WithFields(log.Fields{
 				"Error": err.Error(),
@@ -93,7 +96,7 @@ func SendState(msg []byte) error {
 				"Topic":   topic,
 				"Message": string(valueJson),
 			}).Debug("Show - Send plug message")
-			return MQTTSendTopic(topic, valueJson, false)
+			return MQTTSendTopic(topic, valueJson, retain)
 		} else {
 			log.Error(err.Error())
 			return err
@@ -112,14 +115,14 @@ func SendState(msg []byte) error {
 				level = int(info.Level)
 			}
 		*/
-		level = int(info.Level)
+		// level = 100 - int(info.Level)
 
 		if valueJson, err = json.Marshal(MQTTmessage{Value: level}); err == nil {
 			log.WithFields(log.Fields{
 				"Topic":   topic,
 				"Message": string(valueJson),
 			}).Debug("Show - Send cover message")
-			return MQTTSendTopic(topic, valueJson, false)
+			return MQTTSendTopic(topic, valueJson, retain)
 		} else {
 			log.Error(err.Error())
 			return err

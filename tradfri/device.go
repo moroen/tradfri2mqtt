@@ -14,14 +14,14 @@ func (d *DeviceList) Init() {
 
 type TradfriDevice struct {
 	DeviceInfo struct {
-		Manufacturer    string `json:"0"`
-		Model           string `json:"1"`
-		Num2            string `json:"2"`
-		FirmvareVersion string `json:"3"`
-		Num6            int    `json:"6"`
-		Num7            int    `json:"7"`
-		Num8            int    `json:"8"`
-		BatteryStatus   int    `json:"9"`
+		Manufacturer    string      `json:"0"`
+		Model           string      `json:"1"`
+		Num2            string      `json:"2"`
+		FirmvareVersion string      `json:"3"`
+		Num6            int         `json:"6"`
+		Num7            int         `json:"7"`
+		Num8            int         `json:"8"`
+		BatteryStatus   interface{} `json:"9"`
 	} `json:"3"`
 	LightControl []struct {
 		ColorHex string `json:"5706"`
@@ -66,6 +66,8 @@ type WSStateObject struct {
 	ColorSpace string `json:"colorspace"`
 	State      bool   `json:"state"`
 	Dimmer     int    `json:"dimmer"`
+	Position   int    `json:"position"`
+	Battery    int    `json:"battery"`
 }
 
 func (d *TradfriDevice) WSStateObject() WSStateObject {
@@ -78,6 +80,8 @@ func (d *TradfriDevice) WSStateObject() WSStateObject {
 		State:      d.GetState(),
 		ColorSpace: d.ColorSpace(),
 		Dimmer:     d.DimmerLevel(),
+		Position:   d.BlindPosition(),
+		Battery:    d.BatteryState(),
 	}
 
 	return ws
@@ -89,6 +93,24 @@ func (d *TradfriDevice) DimmerLevel() int {
 	} else {
 		return -1
 	}
+}
+
+func (d *TradfriDevice) BlindPosition() int {
+	if d.BlindControl != nil {
+		return int(d.BlindControl[0].Position)
+	} else {
+		return -1
+	}
+}
+
+func (d *TradfriDevice) BatteryState() int {
+
+	if bat, ok := d.DeviceInfo.BatteryStatus.(float64); ok {
+		return int(bat)
+	} else {
+		return -1
+	}
+
 }
 
 func (d *TradfriDevice) ColorSpace() string {

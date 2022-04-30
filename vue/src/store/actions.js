@@ -85,6 +85,8 @@ const saveSettings = (context) => {
   //  settingsURL = "http://localhost:8321/api/settings";
   //}
 
+  console.log(settings);
+
   const requestOptions = {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -100,7 +102,7 @@ const saveSettings = (context) => {
       }
     })
     .then((data) => {
-      context.commit("setStatus", "Settings saved")
+      context.commit("setStatus", "Settings saved");
     })
     .catch((err) => {
       context.commit("setStatus", "Unable to save settings");

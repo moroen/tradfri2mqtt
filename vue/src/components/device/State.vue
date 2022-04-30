@@ -5,7 +5,6 @@
 <script setup>
 import { computed } from "vue";
 import { useStore } from "vuex";
-import sendCommand from "./common";
 
 const store = useStore();
 
@@ -21,12 +20,14 @@ const state = computed({
   },
   set(value) {
     const command = {
-      deviceid: props.deviceid,
-      command: "state",
-      state: value,
+      class: "device",
+      // command: "state",
+      value: {
+        deviceid: props.deviceid,
+        payload: { State: value },
+      }
     };
-
-    sendCommand(props.deviceid, command);
+    store.dispatch("sendWSCommand", JSON.stringify(command));
   },
 });
 </script>

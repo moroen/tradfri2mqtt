@@ -46,7 +46,7 @@ func HandleMQTTQueue() {
 }
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-	fmt.Printf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
+	// fmt.Printf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
 }
 
 var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
@@ -67,24 +67,22 @@ func GetMQTTClientConnection() mqtt.Client {
 	return _client
 }
 
-func SendTopic(topic string, payload []byte, retained bool) error {
-	if viper.GetBool("mqtt.enable") {
-		if client := GetMQTTClientConnection(); client != nil {
-			log.WithFields(log.Fields{
-				"Topic":   topic,
-				"Payload": string(payload),
-			}).Debug("SendTopic")
-			if token := client.Publish(topic, 0, retained, payload); token.Error() != nil {
-				log.Error("Unable to publish to broker")
-				messageQueue = append(messageQueue, MQTTQueueItem{Topic: topic, Payload: payload, Retained: retained})
-				return token.Error()
-			}
+func SendTopic_not_enabled(topic string, payload []byte, retained bool) error {
+	log.Debug("SendTopic - MQTT not enabled")
+	return nil
+}
 
-		} else {
-			log.WithFields(log.Fields{
-				"topic":   string(topic),
-				"payload": string(payload),
-			}).Error("MQTT client connection not set")
+func SendTopic(topic string, payload []byte, retained bool) error {
+
+	if client := GetMQTTClientConnection(); client != nil {
+		log.WithFields(log.Fields{
+			"Topic":   topic,
+			"Payload": string(payload),
+		}).Debug("SendTopic")
+		if token := client.Publish(topic, 0, retained, payload); token.Error() != nil {
+			log.Error("Unable to publish to broker")
+			messageQueue = append(messageQueue, MQTTQueueItem{Topic: topic, Payload: payload, Retained: retained})
+			return token.Error()
 		}
 	}
 	return nil

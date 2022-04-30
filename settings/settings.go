@@ -26,6 +26,7 @@ func Init(cpath string) {
 	viper.SetDefault("mqtt.host", "127.0.0.1")
 	viper.SetDefault("mqtt.discoverytopic", "homeassistant")
 	viper.SetDefault("mqtt.commandtopic", "tradfri")
+	viper.SetDefault("mqtt.retainstatusmessages", false)
 
 	viper.SetDefault("messages.retrylimit", 5)
 	viper.SetDefault("messages.retrydelay", 10)
@@ -71,6 +72,7 @@ type Config struct {
 		Enable         bool   `json:"enable" yaml:"enable" env:"MQTT_ENABLE" env-default:"true"`
 		Port           int    `json:"port" yaml:"port" env:"MQTT_BROKER_PORT" env-default:"1883"`
 		Host           string `json:"host" yaml:"host" env:"MQTT_BROKER_HOST" env-default:"localhost"`
+		RetainStatus   bool   `json:"retainstatusmessages" yaml:"retainstatusmessages" env:"MQTT_RETAIN_STATUS" env-default:"false"`
 		DiscoveryTopic string `json:"discoverytopic" yaml:"discoverytopic" env:"MQTT_DISCOVERY_TOPIC" env-default:"homeassistant"`
 		CommandTopic   string `json:"commandtopic" yaml:"commandtopic" env:"MQTT_COMMAND_TOPIC" env-default:"tradfri"`
 	} `json:"mqtt" yaml:"mqtt"`
@@ -84,9 +86,10 @@ type Config struct {
 		BlindsInverted  bool   `json:"blindsinverted" yaml:"blindsinverted"`
 	} `json:"tradfri" yaml:"tradfri"`
 	Interface struct {
-		Enable       bool   `json:"enable" yaml:"enable" env:"WWW_ENABLE" env-default:"true"`
-		ServerRoot   string `json:"gateway" yaml:"gateway" env:"MQTT_INTERFACE_ROOT" env-default:"./www"`
-		BacklogLimit int    `json:"backloglimit" yaml:"backloglimit" env:"MQTT_INTERFACE_BACKLOG_LIMIT" env-default: 10`
+		Enable     bool   `json:"enable" yaml:"enable" env:"WWW_ENABLE" env-default:"true"`
+		ServerRoot string `json:"root" yaml:"root" env:"MQTT_INTERFACE_ROOT" env-default:"./www"`
+		Port       int    `json:"port" yaml:"port" env:"MQTT_INTERFACE_PORT" env-default:"8321"`
+		// BacklogLimit int    `json:"backloglimit" yaml:"backloglimit" env:"MQTT_INTERFACE_BACKLOG_LIMIT" env-default: 10`
 	} `json:"interface" yaml:"interface"`
 }
 

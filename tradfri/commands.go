@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	mqtt "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -17,10 +16,10 @@ type MQTTStateMessage struct {
 		X float64 `json:"x"`
 		Y float64 `json:"y"`
 	} `json:"color"`
-	State      string `json:"state"`
-	Brightness int    `json:"brightness"`
-	ColorTemp  int    `json:"color_temp"`
-	Position   int    `json:"position"`
+	State      interface{} `json:"state"`
+	Brightness int         `json:"brightness"`
+	ColorTemp  int         `json:"color_temp"`
+	Position   int         `json:"position"`
 }
 
 type MQTTpayload struct {
@@ -35,15 +34,15 @@ type MQTTboolPayload struct {
 	Value string
 }
 
-func ParseMessage(msg mqtt.Message) (deviceid int64, state int, level int, x int64, y int64, color_temp int, err error) {
+func ParseMessage(topic string, payload []byte) (deviceid int64, state int, level int, x int64, y int64, color_temp int, err error) {
 
 	message := MQTTStateMessage{Brightness: -1, Position: -1}
 	message.ColorTemp = -1
 	message.Color.X = -1
 	message.Color.Y = -1
 
-	if err = json.Unmarshal(msg.Payload(), &message); err == nil {
-		s := strings.Split(msg.Topic(), "/")
+	if err = json.Unmarshal(payload, &message); err == nil {
+		s := strings.Split(topic, "/")
 
 		deviceid, err = strconv.ParseInt(s[1], 10, 64)
 		if err != nil {
@@ -51,11 +50,22 @@ func ParseMessage(msg mqtt.Message) (deviceid int64, state int, level int, x int
 			return 0, 0, 0, -1, -1, -1, err
 		}
 
-		switch message.State {
-		case "ON":
-			state = 1
-		case "OFF":
-			state = 0
+		switch message.State.(type) {
+		case string:
+			switch strings.ToUpper(fmt.Sprintf("%v", message.State)) {
+			case "ON":
+				state = 1
+			case "OFF":
+				state = 0
+			default:
+				state = -1
+			}
+		case bool:
+			if message.State.(bool) {
+				state = 1
+			} else {
+				state = 0
+			}
 		default:
 			state = -1
 		}
@@ -85,24 +95,24 @@ func ParseMessage(msg mqtt.Message) (deviceid int64, state int, level int, x int
 	}
 }
 
-func State(msg mqtt.Message) {
+func State(topic string, payload []byte) {
 	state := -1
 
 	log.WithFields(log.Fields{
-		"topic":   msg.Topic(),
-		"payload": string(msg.Payload()),
+		"topic":   topic,
+		"payload": string(payload),
 	}).Debug("Received state message")
 
-	if bValue, err := strconv.ParseBool(string(msg.Payload())); err == nil {
+	if bValue, err := strconv.ParseBool(string(payload)); err == nil {
 		if bValue {
 			state = 1
 		} else {
 			state = 0
 		}
 	} else {
-		var payload MQTTboolPayload
-		if err := json.Unmarshal(msg.Payload(), &payload); err == nil {
-			if payload.Value == "true" {
+		var payloadStruct MQTTboolPayload
+		if err := json.Unmarshal(payload, &payloadStruct); err == nil {
+			if payloadStruct.Value == "true" {
 				state = 1
 			} else {
 				state = 0
@@ -110,7 +120,7 @@ func State(msg mqtt.Message) {
 		}
 	}
 
-	s := strings.Split(msg.Topic(), "/")
+	s := strings.Split(topic, "/")
 
 	deviceid, err := strconv.ParseInt(s[1], 10, 64)
 	if err != nil {
@@ -129,17 +139,19 @@ func State(msg mqtt.Message) {
 
 }
 
-func Blind(msg mqtt.Message) {
+func Blind(topic string, payload []byte) {
 	log.WithFields(log.Fields{
-		"topic":   msg.Topic(),
-		"payload": string(msg.Payload()),
+		"topic":   topic,
+		"payload": string(payload),
 	}).Debug("Received blind message")
 
-	deviceid, _, value, _, _, _, err := ParseMessage(msg)
+	deviceid, _, value, _, _, _, err := ParseMessage(topic, payload)
 	if err != nil {
 		log.Error(err.Error())
 		return
 	}
+
+	// value = 100 - value
 
 	log.WithFields(log.Fields{
 		"DeviceID": deviceid,
@@ -164,15 +176,15 @@ func Blind(msg mqtt.Message) {
 
 }
 
-func Dimmer(msg mqtt.Message) {
+func Dimmer(topic string, payload []byte) {
 	// fmt.Printf("Received dimmer message: %s from topic: %s\n", msg.Payload(), msg.Topic())
 
 	log.WithFields(log.Fields{
-		"topic":   msg.Topic(),
-		"payload": string(msg.Payload()),
+		"topic":   topic,
+		"payload": string(payload),
 	}).Debug("Received dimmer message")
 
-	deviceid, state, level, x, y, col_temp, err := ParseMessage(msg)
+	deviceid, state, level, x, y, col_temp, err := ParseMessage(topic, payload)
 	if err != nil {
 		log.Error(err.Error())
 		return
@@ -200,13 +212,24 @@ func Dimmer(msg mqtt.Message) {
 		}
 
 		if level != -1 {
-			d.SetLevel(level, func(msg []byte, err error) {
-				if err != nil {
-					log.WithFields(log.Fields{
-						"Error": err.Error(),
-					}).Error("MQTT - Set State")
-				}
-			})
+			if d.LightControl != nil {
+				d.SetLevel(level, func(msg []byte, err error) {
+					if err != nil {
+						log.WithFields(log.Fields{
+							"Error": err.Error(),
+						}).Error("MQTT - Set State")
+					}
+				})
+			} else if d.BlindControl != nil {
+				d.SetBlind(level, func(msg []byte, err error) {
+					if err != nil {
+						log.WithFields(log.Fields{
+							"Error": err.Error(),
+						}).Error("MQTT - Set Blind")
+					}
+				})
+
+			}
 		}
 
 		if x != -1 {

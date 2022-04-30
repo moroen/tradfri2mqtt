@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/moroen/tradfri2mqtt/tradfri"
+	"github.com/sirupsen/logrus"
 )
 
 type WSLogHook struct {
@@ -18,9 +19,16 @@ type WsMessage struct {
 	Data  interface{} `json:"data"`
 }
 
+type MQTTMessage struct {
+	Topic   string
+	Payload []byte
+}
+
 func HandleCommand(msg []byte) error {
 	var cmd WSocketCommand
 	if err := json.Unmarshal(msg, &cmd); err == nil {
+
+		// fmt.Printf("%+v\n", cmd)
 		switch cmd.Class {
 		case "log":
 			switch cmd.Command {
@@ -33,12 +41,14 @@ func HandleCommand(msg []byte) error {
 				tradfri.Discover(true)
 			}
 		case "device":
-			switch cmd.Command {
-			case "setxy":
-				fmt.Println(cmd.Value)
-				tradfri.Discover(true)
-			}
+			msg := WSDeviceMessage{}
+			json.Unmarshal(*cmd.Value, &msg)
+			topic := fmt.Sprintf("internal/%d", msg.Deviceid)
+			// fmt.Printf("%+v\n", msg)
+			tradfri.Dimmer(topic, *msg.Payload)
 		}
+	} else {
+		fmt.Println(err.Error())
 	}
 	return nil
 }
@@ -48,6 +58,11 @@ func SendJson(message []byte) error {
 	case hub.broadcast <- message:
 	default:
 	}
+	return nil
+}
+
+func SendDeviceJSON_not_enabled(message interface{}) error {
+	logrus.Debug("SendDeviceJSON - Interface not enabled")
 	return nil
 }
 
@@ -65,7 +80,16 @@ func SendDeviceJSON(message interface{}) error {
 }
 
 type WSocketCommand struct {
-	Class   string      `json:"class"`
-	Command string      `json:"command"`
-	Value   interface{} `json:"value"`
+	Class   string           `json:"class"`
+	Command string           `json:"command"`
+	Value   *json.RawMessage `json:"value"`
+}
+
+type WSDeviceMessage struct {
+	Deviceid int64            `json:"deviceid"`
+	Payload  *json.RawMessage `json:"payload"`
+}
+
+type WSPayloadState struct {
+	Value bool `json:"value"`
 }

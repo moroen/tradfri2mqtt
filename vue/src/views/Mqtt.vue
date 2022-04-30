@@ -1,14 +1,7 @@
 <template>
   <q-page padding>
-    <q-tabs
-      v-model="tab"
-      dense
-      class="text-grey"
-      active-color="primary"
-      indicator-color="primary"
-      align="left"
-      narrow-indicator
-    >
+    <q-tabs v-model="tab" dense class="text-grey" active-color="primary" indicator-color="primary" align="left"
+      narrow-indicator>
       <q-tab name="settings" label="Settings" />
     </q-tabs>
 
@@ -21,52 +14,27 @@
 
           <div class="row justify-start">
             <div class="col-md-3">
-              <q-input
-                standard
-                v-model="host"
-                label="Broker IP *"
-                hint="Hostname or IP-address of the MQTT-broker"
-                :rules="stringRules"
-                :disable="!enable"
-              />
+              <q-input standard v-model="host" label="Broker IP *" hint="Hostname or IP-address of the MQTT-broker"
+                :rules="stringRules" :disable="!enable" />
             </div>
 
             <div class="q-pl-sm">
-              <q-input
-                standard
-                v-model="port"
-                label="Port *"
-                hint="MQTT port"
-                :rules="portRule"
-                :disable="!enable"
-                type="number"
-              />
+              <q-input standard v-model.number="port" label="Port *" hint="MQTT port" :rules="portRule"
+                :disable="!enable" type="number" />
             </div>
           </div>
           <div class="q-pa-md"></div>
           <div class="row justify-start">
             <div class="col-4">
-              <q-input
-                standard
-                v-model="commandtopic"
-                label="Command topic"
-                hint="Subscribed topic for controlling devices"
-                :rules="stringRules"
-                :disable="!enable"
-              />
+              <q-input standard v-model="commandtopic" label="Command topic"
+                hint="Subscribed topic for controlling devices" :rules="stringRules" :disable="!enable" />
             </div>
           </div>
 
           <div class="row justify-start">
             <div class="col-md-4">
-              <q-input
-                standard
-                v-model="discoverytopic"
-                label="Discovery topic"
-                hint="Topic for sending device configurations"
-                :rules="stringRules"
-                :disable="!enable"
-              />
+              <q-input standard v-model="discoverytopic" label="Discovery topic"
+                hint="Topic for sending device configurations" :rules="stringRules" :disable="!enable" />
             </div>
           </div>
         </q-form>

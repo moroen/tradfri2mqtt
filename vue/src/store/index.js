@@ -78,6 +78,9 @@ export default createStore({
     setDeviceDimmerLevel(state, payload) {
       state.websocket.devices[payload.deviceid].dimmer = payload.level;
     },
+    setDeviceBlindPosition(state, payload) {
+      state.websocket.devices[payload.deviceid].position = payload.level;
+    },
   },
   actions,
   modules: {},

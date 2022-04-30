@@ -12,14 +12,17 @@ const onConnect = (event) => {
 };
 
 const onMessage = (event) => {
-  // console.log(event.data)
+  // console.log(event.data);
   var obj = JSON.parse(event.data);
-  storeContext.commit("addWSLogEntry", obj);
+  // storeContext.commit("addWSLogEntry", obj);
+  console.log(JSON.stringify(obj));
   switch (obj.class) {
     case "log":
       storeContext.commit("addLogEntry", obj.data);
+      break;
     case "devices":
       storeContext.commit("updateDeviceInfo", obj.data);
+      break;
   }
 };
 
@@ -50,19 +53,19 @@ export const sendWSCommand = (context, payload) => {
     connection.onmessage = onMessage;
 
     connection.onopen = () => {
-      context.commit("setStatus", "WebSocket connected")
+      context.commit("setStatus", "WebSocket connected");
       connectionDelay = 5000;
       context.dispatch("sendWSCommand", payload);
     };
 
     connection.onclose = () => {
-      context.commit("setStatus", "WebSocket not connected")
+      context.commit("setStatus", "WebSocket not connected");
       console.log("Connection closed");
       context.commit("setConnection", null);
     };
 
     connection.onerror = () => {
-      context.commit("setStatus", "WebSocket failed to connect")
+      context.commit("setStatus", "WebSocket failed to connect");
       setTimeout(() => {
         context.dispatch("sendWSCommand", payload);
       }, connectionDelay);
