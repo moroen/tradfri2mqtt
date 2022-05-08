@@ -2,12 +2,15 @@ package webinterface
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sync"
 
 	"github.com/moroen/tradfri2mqtt/tradfri"
 	"github.com/sirupsen/logrus"
 )
+
+var ErrorWebSocketHubNotDefined = errors.New("websocket: hub not defined")
 
 type WSLogHook struct {
 	mu      sync.Mutex
@@ -54,6 +57,10 @@ func HandleCommand(msg []byte) error {
 }
 
 func SendJson(message []byte) error {
+	if hub == nil {
+		return ErrorWebSocketHubNotDefined
+	}
+
 	select {
 	case hub.broadcast <- message:
 	default:

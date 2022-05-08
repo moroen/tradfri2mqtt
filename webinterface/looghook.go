@@ -2,6 +2,7 @@ package webinterface
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/sirupsen/logrus"
 )
@@ -30,7 +31,10 @@ func MarshalEntry(e *logrus.Entry) ([]byte, error) {
 func (h *WSLogHook) Fire(e *logrus.Entry) error {
 
 	if msg, err := MarshalEntry(e); err == nil {
-
+		if hub == nil {
+			fmt.Println(msg)
+			return ErrorWebSocketHubNotDefined
+		}
 		select {
 		case hub.broadcast <- msg:
 		default:
