@@ -103,21 +103,10 @@ func SendState(msg []byte) error {
 		}
 
 	} else if info, err := ParseBlindInfo(msg); err == nil {
-		var level int
 
 		topic = fmt.Sprintf("tradfri/%d/blind", info.Id)
-		/*
-			inverted := viper.GetBool("tradfri.blindsinverted")
-			if inverted {
-				level = 100 - int(info.Level)
 
-			} else {
-				level = int(info.Level)
-			}
-		*/
-		// level = 100 - int(info.Level)
-
-		if valueJson, err = json.Marshal(MQTTmessage{Value: level}); err == nil {
+		if valueJson, err = json.Marshal(MQTTmessage{Value: int(info.Level)}); err == nil {
 			log.WithFields(log.Fields{
 				"Topic":   topic,
 				"Message": string(valueJson),

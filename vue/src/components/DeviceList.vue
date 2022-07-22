@@ -13,7 +13,7 @@
     <div v-for="(item, index) in devices" :key="index" class="row q-gutter-md q-pa-xs q-ma-xs"
       style="background-color: #f6f6f6">
 
-      as <device :deviceid="item.id"></device>
+      <device :deviceid="item.id"></device>
 
     </div>
   </scroller>

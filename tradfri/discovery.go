@@ -7,7 +7,6 @@ import (
 
 	"github.com/buger/jsonparser"
 	log "github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"golang.org/x/net/context"
 )
 
@@ -203,15 +202,8 @@ func SendConfigObject(d *TradfriDevice) {
 		var openTopic string
 		var closeTopic string
 
-		inverted := viper.GetBool("tradfri.blindsinverted")
-		if inverted {
-			openTopic = "{ \"position\": 100 }"
-			closeTopic = "{ \"position\": 0 }"
-		} else {
-
-			openTopic = "{ \"position\": 0 }"
-			closeTopic = "{ \"position\": 100 }"
-		}
+		openTopic = "{ \"position\": 0 }"
+		closeTopic = "{ \"position\": 100 }"
 
 		cmdTopic := fmt.Sprintf("%s/%d/blind/set", _mqtt_command_topic, d.Id)
 		posTopic := fmt.Sprintf("%s/%d/blind", _mqtt_command_topic, d.Id)
